@@ -1,0 +1,23 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and fill in your actual values
+
+project_id = "your-project-id"
+region        = "asia-south1"
+image_tag     = "gcr.io/your-project-id/matdaan-mitra-backend:latest"
+frontend_image_tag = "gcr.io/your-project-id/matdaan-mitra-frontend:latest"
+environment   = "production"
+log_level     = "INFO"
+frontend_url  = "https://matdaan-mitra.web.app"
+min_instances = 2
+max_instances = 100
+
+# API Keys (these will be stored in Secret Manager)
+gemini_api_key              = "your-gemini-api-key"
+mapbox_access_token         = "pk.your-mapbox-access-token"
+google_translate_api_key    = "your-google-translate-api-key"
+firebase_service_account     = "base64-encoded-firebase-service-account-json"
+fernet_key                  = "your-fernet-encryption-key"
+vertex_ai_index_id           = "your-vertex-ai-index-id"
+vertex_ai_index_endpoint_id  = "your-vertex-ai-index-endpoint-id"
+firebase_project_id          = "your-firebase-project-id"
+redis_url                    = "redis://your-redis-instance:6379"
