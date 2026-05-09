@@ -1,0 +1,56 @@
+[project]
+name = "matdaan-mitra-backend"
+version = "0.1.0"
+description = "Backend API for Matdaan Mitra - Indian Voter Assistance AI"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.9.2",
+    "pydantic-settings>=2.6.0",
+    "langchain>=0.3.7",
+    "langgraph>=0.2.45",
+    "langchain-google-vertexai>=2.0.5",
+    "google-cloud-aiplatform>=1.71.1",
+    "google-cloud-translate>=3.15.3",
+    "google-cloud-storage>=2.18.2",
+    "google-cloud-firestore>=2.19.0",
+    "firebase-admin>=6.5.0",
+    "mapbox-gl>=0.15.0",
+    "httpx>=0.27.2",
+    "tenacity>=9.0.0",
+    "cryptography>=43.0.3",
+    "bleach>=6.2.0",
+    "redis>=5.2.0",
+    "PyMuPDF>=1.24.10",
+    "python-multipart>=0.0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.7.2",
+    "mypy>=1.13.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
