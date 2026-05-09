@@ -56,7 +56,8 @@ GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json
 VERTEX_AI_INDEX_ID=your-vector-search-index-id
 VERTEX_AI_INDEX_ENDPOINT_ID=your-endpoint-id
 MAPBOX_ACCESS_TOKEN\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token=your-maps-key
-GOOGLE_TRANSLATE_API_KEY\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token=your-translate-key
+GOOGLE_TRANSLATE_API_KEY
+MAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token=your-translate-key
 FIREBASE_PROJECT_ID=your-firebase-project
 FIREBASE_SERVICE_ACCOUNT_PATH=path/to/firebase-admin.json
 REDIS_URL=redis://localhost:6379
