@@ -1,80 +1,126 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
-from typing import Literal
-import os
+from pydantic import validator
+from cryptography.fernet import Fernet
+from functools import lru_cache
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Keys that are genuinely required even in development
+# (needed for the app to start at all)
+HARD_REQUIRED = {"gcp_project_id", "fernet_key", "frontend_url"}
+
+# Keys that are required in production but can be "dummy" in dev
+# (the routes that use them will return a clear error if called)
+SOFT_REQUIRED = {
+    "google_maps_api_key", "google_translate_api_key",
+    "vertex_ai_index_id", "vertex_ai_index_endpoint_id",
+    "firebase_project_id", "firebase_service_account_path",
+    "document_ai_processor_id", "gcs_bucket_name",
+}
 
 
 class Settings(BaseSettings):
-    """Application settings with environment variable validation."""
-
     # Google Cloud
-    gcp_project_id: str = Field(..., description="GCP Project ID")
-    gcp_location: str = Field(default="asia-south1", description="GCP Region")
-    google_application_credentials: str = Field(
-        ..., description="Path to service account JSON"
-    )
+    gcp_project_id: str
+    gcp_location: str = "asia-south1"
+    google_application_credentials: str = ""
 
     # Vertex AI
-    vertex_ai_index_id: str = Field(..., description="Vector Search Index ID")
-    vertex_ai_index_endpoint_id: str = Field(..., description="Vector Search Endpoint ID")
+    vertex_ai_index_id: str = "dummy"
+    vertex_ai_index_endpoint_id: str = "dummy"
 
-    # Mapbox GL
-    mapbox_access_token: str = Field(..., description="Mapbox Access Token")
+    # Google APIs
+    google_maps_api_key: str = "dummy"
+    mapbox_token: str = "dummy"
+    google_translate_api_key: str = "dummy"
 
-    # Google Translate
-    google_translate_api_key: str = Field(..., description="Google Translate API Key")
+    # Mapbox
+    mapbox_access_token: str = "dummy"
 
-    # Firebase Admin
-    firebase_project_id: str = Field(..., description="Firebase Project ID")
-    firebase_service_account_path: str = Field(
-        ..., description="Path to Firebase service account JSON"
-    )
+    # Firebase
+    firebase_project_id: str = "dummy"
+    firebase_service_account_path: str = "dummy"
 
-    # Redis
-    redis_url: str = Field(default="redis://localhost:6379", description="Redis connection URL")
-
-    # Encryption
-    fernet_key: str = Field(..., description="Fernet encryption key")
-
-    # CORS
-    frontend_url: str = Field(default="http://localhost:3000", description="Frontend URL for CORS")
-
-    # ECI Corpus
-    gcs_bucket_name: str = Field(default="matdaan-eci-corpus", description="GCS bucket for ECI corpus")
+    # Document AI
+    document_ai_processor_id: str = "dummy"
+    document_ai_location: str = "us"
 
     # App
-    environment: Literal["development", "staging", "production"] = Field(
-        default="development", description="Environment"
-    )
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
-        default="INFO", description="Log level"
-    )
-
-    @validator("google_application_credentials", "firebase_service_account_path")
-    def validate_credential_paths(cls, v):
-        if not os.path.exists(v):
-            raise ValueError(f"Credential file not found: {v}")
-        return v
+    redis_url: str = "redis://localhost:6379"
+    fernet_key: str
+    frontend_url: str = "http://localhost:3000"
+    gcs_bucket_name: str = "dummy"
+    environment: str = "development"
+    log_level: str = "INFO"
 
     @validator("fernet_key")
-    def validate_fernet_key(cls, v):
-        from cryptography.fernet import Fernet
+    def validate_fernet(cls, v):
+        if not v or v.strip() == "":
+            key = Fernet.generate_key().decode()
+            raise ValueError(
+                f"FERNET_KEY is missing. Add this line to your .env:\n"
+                f"FERNET_KEY={key}"
+            )
         try:
             Fernet(v.encode())
         except Exception:
-            raise ValueError("Invalid Fernet key")
+            raise ValueError(
+                "FERNET_KEY is invalid. Generate one with:\n"
+                "python -c \"from cryptography.fernet import Fernet; "
+                "print(Fernet.generate_key().decode())\""
+            )
         return v
 
-    @validator("mapbox_access_token")
-    def validate_mapbox_token(cls, v):
-        if not v.startswith("pk."):
-            raise ValueError("Invalid Mapbox token: must start with 'pk.'")
+    @validator("gcp_project_id")
+    def validate_project_id(cls, v):
+        if not v or v.strip() == "" or v == "dummy":
+            raise ValueError(
+                "GCP_PROJECT_ID is required. "
+                "Find it at: console.cloud.google.com"
+            )
         return v
+
+    @property
+    def is_dev(self) -> bool:
+        return self.environment == "development"
+
+    def check_api_available(self, api_name: str) -> bool:
+        """
+        Returns True if an API key is set to a real value.
+        Use this in service files before making real API calls.
+        """
+        key_map = {
+            "maps":        self.mapbox_token,
+            "translate":   self.google_translate_api_key,
+            "vertex":      self.vertex_ai_index_id,
+            "firebase":    self.firebase_project_id,
+            "document_ai": self.document_ai_processor_id,
+        }
+        val = key_map.get(api_name, "dummy")
+        return val not in ("dummy", "", None)
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
-        case_sensitive = False
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+settings = get_settings()
+
+# Log which APIs are available at startup
+if settings.is_dev:
+    available = [k for k in ["maps","translate","vertex","firebase","document_ai"]
+                 if settings.check_api_available(k)]
+    missing   = [k for k in ["maps","translate","vertex","firebase","document_ai"]
+                 if not settings.check_api_available(k)]
+    if available:
+        logger.info(f"APIs available: {available}")
+    if missing:
+        logger.warning(
+            f"APIs not yet configured (using dummy): {missing}. "
+            f"These routes will return a clear error if called."
+        )

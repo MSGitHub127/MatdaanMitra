@@ -1,74 +1,107 @@
-# Matdaan Mitra (मतदान मित्र)
+Here is the complete, integrated README file in a single block so you can copy and paste it straight into your repository.
 
-Your intelligent, conversational guide to navigating the Indian election process.
+```markdown
+# 🇮🇳 MatdaanMitra (मतदान मित्र) 
+**Your intelligent, conversational, and localized guide to navigating the Indian election process.**
 
-## Overview
+[![Frontend](https://img.shields.io/badge/Frontend-Next.js_14-black?logo=next.js)](https://nextjs.org/)
+[![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![AI](https://img.shields.io/badge/AI-Gemini_1.5_Pro-blue?logo=google)](https://cloud.google.com/vertex-ai)
+[![Maps](https://img.shields.io/badge/Maps-MapBox-4285F4?logo=mapbox)](https://www.mapbox.com/)
+[![Language](https://img.shields.io/badge/Language-Sarvam_AI-FF9900)](https://www.sarvam.ai/)
 
-Matdaan Mitra is an AI-powered voter assistance system designed to help Indian citizens navigate the complex voter registration process. It provides personalized guidance, real-time status verification, and step-by-step assistance for all election-related procedures.
+## 📖 Overview
+**MatdaanMitra** is an AI-powered voter assistance platform built to democratize access to the Indian electoral system. Designed for the diverse linguistic and geographic landscape of India, it provides personalized guidance, real-time status verification, localized voice assistance, and interactive maps to help citizens navigate the voter registration and election process seamlessly.
 
-## Features
+## ✨ Key Features
+* **🗣️ Hyper-Localized Voice & Text:** Powered exclusively by **Sarvam AI**, offering seamless translation and voice-agent capabilities in multiple Indian regional languages (Hindi, Marathi, Tamil, Telugu, Bengali, Kannada, etc.).
+* **📍 Interactive Polling Booth Mapping:** Integrated with **MapBox** for precise geospatial rendering, helping voters discover their real Electoral Registration Officer (ERO) offices and polling stations.
+* **✅ Live Voter Verification:** Real-time lookup capabilities via the ECI electoral search API.
+* **📅 Constituency-Aware Deadlines:** Dynamic, phase-based election schedules tailored to a voter's specific geographic location.
+* **📄 Document Gap Analysis:** Intelligently identifies missing required documents and suggests valid alternatives based on ECI guidelines.
+* **⚖️ Grievance Filing Assistant:** Automatically generates pre-filled complaint letters for missing registrations.
 
-- **Live Voter Status Verification**: Real-time lookup via ECI electoral search API
-- **Constituency-Aware Deadlines**: Phase-based election schedules specific to your constituency
-- **Document Gap Analysis**: Identifies required documents and suggests alternatives
-- **Grievance Filing Assistant**: Generates pre-filled complaint letters for missing registrations
-- **Multi-Language Support**: Available in Hindi, Marathi, Tamil, Telugu, Bengali, Kannada, and more
-- **Decision Transparency**: Full agent reasoning trace with source citations
+## 🛠️ Tech Stack
+* **Frontend:** Next.js 14, TypeScript, Tailwind CSS, Firebase
+* **Backend:** FastAPI, Python 3.12, LangGraph
+* **AI & Intelligence:** Gemini 1.5 Pro (via Vertex AI), Vertex AI Vector Search
+* **Geospatial:** MapBox GL
+* **Language & Voice:** Sarvam AI
+* **Database & Caching:** Firestore, Redis (Memorystore)
+* **Deployment:** Firebase Hosting (CDN edge), Cloud Run
 
-## Tech Stack
+---
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Firebase
-- **Backend**: FastAPI, Python 3.12, LangGraph
-- **AI**: Gemini 1.5 Pro via Vertex AI
-- **Data**: Vertex AI Vector Search, Firestore, Redis
-- **Hosting**: Firebase Hosting, Cloud Run
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js 18+
-- Python 3.12+
-- Google Cloud Project with APIs enabled
-- Firebase Project
+* Node.js 18+
+* Python 3.11 / 3.12
+* Google Cloud Project (Vertex AI enabled)
+* Firebase Project
+* MapBox Account & Token
+* Sarvam AI API Key
 
 ### Installation
 
+**1. Clone the repository & setup backend**
 ```bash
-# Backend
-cd backend
+git clone [https://github.com/your-username/matdaan-mitra.git](https://github.com/your-username/matdaan-mitra.git)
+cd matdaan-mitra/backend
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows use: .\.venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Frontend
-cd frontend
+```
+
+**2. Setup frontend**
+
+```bash
+cd ../frontend
 npm install
+
 ```
 
 ### Configuration
 
-Create `.env` files with your API keys:
+Create `.env` files in both the `backend` and `frontend` directories using the templates below.
 
-**Backend (.env)**:
+**Backend (`backend/.env`)**:
+
 ```env
+# GCP Settings
 GCP_PROJECT_ID=your-project-id
 GCP_LOCATION=asia-south1
 GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json
+
+# Vertex AI Settings
 VERTEX_AI_INDEX_ID=your-vector-search-index-id
 VERTEX_AI_INDEX_ENDPOINT_ID=your-endpoint-id
-MAPBOX_ACCESS_TOKEN\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token=your-maps-key
-GOOGLE_TRANSLATE_API_KEY
-MAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token\nMAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token=your-translate-key
+
+# Core Integrations
+SARVAM_API_KEY=your-sarvam-ai-key
+MAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token
+
+# Infrastructure
 FIREBASE_PROJECT_ID=your-firebase-project
 FIREBASE_SERVICE_ACCOUNT_PATH=path/to/firebase-admin.json
 REDIS_URL=redis://localhost:6379
+GCS_BUCKET_NAME=matdaan-eci-corpus
+
+# Security & App Config
 FERNET_KEY=generate-with-cryptography-library
 FRONTEND_URL=http://localhost:3000
-GCS_BUCKET_NAME=matdaan-eci-corpus
 ENVIRONMENT=development
 LOG_LEVEL=INFO
+
 ```
 
-**Frontend (.env.local)**:
+**Frontend (`frontend/.env.local`)**:
+
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
@@ -76,41 +109,49 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your-mapbox-access-token
+
 ```
 
 ### Running the Application
 
+**Terminal 1 (Backend):**
+
 ```bash
-# Backend
 cd backend
+source .venv/bin/activate
 uvicorn src.api.main:app --reload
 
-# Frontend
+```
+
+**Terminal 2 (Frontend):**
+
+```bash
 cd frontend
 npm run dev
-```
-
-## Architecture
 
 ```
+
+---
+
+## 🏗️ Architecture Flow
+
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  FRONTEND (Next.js 14 + App Router)                             │
-│  Deployed on: Firebase Hosting (CDN edge)                       │
-│  Auth: Firebase Auth (anonymous sessions + Google Sign-In)      │
-│  Real-time: Firestore onSnapshot for chat streaming             │
+│  Map UI: MapBox GL                                              │
+│  Auth: Firebase Auth (Anonymous + Google)                       │
 └───────────────────┬─────────────────────────────────────────────┘
                     │ HTTPS / Server-Sent Events
 ┌───────────────────▼─────────────────────────────────────────────┐
-│  BACKEND (FastAPI — Python 3.12)                                │
-│  Deployed on: Cloud Run (min-instances=1, max=50)               │
-│  Auth middleware: Firebase ID token verification                │
-│  Rate limiting: Redis (Memorystore) — 30 req/min per user       │
+│  BACKEND (FastAPI — Python)                                     │
+│  Deployed on: Cloud Run                                         │
+│  Rate limiting: Redis (Memorystore)                             │
 └──────┬────────────┬─────────────────┬───────────────────────────┘
        │            │                 │
 ┌──────▼──┐  ┌──────▼──────┐  ┌──────▼──────────┐
-│LangGraph│  │ Vertex AI   │  │ Firestore       │
-│ Agents  │  │ Gemini 1.5  │  │ (chat history + │
-│(Python) │  │ Pro via API │  │  voter profiles)│
+│LangGraph│  │ Vertex AI   │  │ External APIs   │
+│ Agents  │  │ Gemini 1.5  │  │ - Sarvam AI     │
+│(Python) │  │ Pro via API │  │ - MapBox APIs   │
 └──────┬──┘  └─────────────┘  └─────────────────┘
        │
 ┌──────▼──────────────────────────────────────────┐
@@ -118,50 +159,25 @@ npm run dev
 │ 10,000+ ECI document chunks, embedded with      │
 │ text-embedding-004 model                        │
 └─────────────────────────────────────────────────┘
+
 ```
 
-## Google Services Used
+## 🔐 Security & Data Residency
 
-| Service | Use Case |
-|---------|----------|
-| Vertex AI (Gemini 1.5 Pro) | LLM reasoning and synthesis with 1M token context |
-| Vertex AI Vector Search | ECI document similarity search with India data residency |
-| Firebase Auth | Anonymous sessions + Google Sign-In for frictionless onboarding |
-| Firestore | Real-time chat sync and voter profile persistence |
-| Firebase Hosting | CDN edge deployment for frontend |
-| Mapbox GL | Real ERO office discovery and directions |
-| Cloud Translation API v3 | 9 Indian languages with custom ECI glossary |
-| Cloud Logging + Monitoring | Structured agent decision logs + alerts |
+* **Encryption:** EPIC numbers are encrypted using Fernet before storage.
+* **Authentication:** Firebase ID token verification is required on all core requests.
+* **Rate Limiting:** Capped at 30 requests/minute per user via Redis to prevent abuse.
+* **AI Guardrails:** Political content filtering is enforced via a dedicated LangGraph guardrail node. Confidence thresholds below 0.75 automatically trigger an escalation to the official 1950 helpline.
+* **Data Residency:** All GCP resources are localized in `asia-south1` (Mumbai) to comply with Indian data residency standards.
 
-## Real Data Sources
+## 📚 Official Resources & Citations
 
-| Source | Endpoint | Use |
-|--------|----------|-----|
-| ECI Electoral Search | `electoralsearch.eci.gov.in/api/search` | Live voter enrollment status |
-| India Post Pincode | `api.postalpincode.in/pincode/{pin}` | Address/constituency validation |
-| Mapbox Geocoding | Maps Platform API | ERO office discovery |
-| Google Maps Places | Maps Platform API | Nearest electoral office |
-| Cloud Translation v3 | `translate.googleapis.com` | 9 Indian languages |
-| ECI PDF Downloads | `eci.gov.in/files/file/...` | Form text for RAG corpus |
-| Vertex AI Vector Search | GCP SDK | ECI document similarity search |
-| Gemini 1.5 Pro | Vertex AI SDK | LLM reasoning and synthesis |
+*This project is built for educational/hackathon purposes and utilizes official ECI data guidelines.*
 
-## Security
+* **Election Commission of India:** [eci.gov.in](https://eci.gov.in)
+* **National Voter Service Portal:** [nvsp.in](https://nvsp.in)
+* **Voter Helpline:** 1950
 
-- All API keys stored in environment variables
-- EPIC numbers encrypted with Fernet before storage
-- Firebase ID token verification on every request
-- Rate limiting: 30 requests/minute per user
-- Political content filtering via guardrail node
-- Confidence threshold: 0.75 → escalation to 1950 helpline
-- All GCP resources in `asia-south1` (Mumbai) for data residency
+```
 
-## License
-
-This project is built for educational purposes and uses official ECI data sources.
-
-## Official Resources
-
-- Election Commission of India: https://eci.gov.in
-- National Voter Service Portal: https://nvsp.in
-- Voter Helpline: 1950
+```

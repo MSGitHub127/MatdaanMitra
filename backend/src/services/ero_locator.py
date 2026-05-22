@@ -1,96 +1,123 @@
-import mapbox
+import requests
 from typing import Dict, Any, Optional
 import logging
+from math import radians, sin, cos, sqrt, atan2
 from ..config.settings import settings
 
 logger = logging.getLogger(__name__)
 
+GEOCODE_URL = "https://api.mapbox.com/search/geocode/v6/forward"
+SEARCH_URL = "https://api.mapbox.com/search/searchbox/v1/forward"
+
 
 class EROLocatorService:
-    """Service for locating ERO offices using Mapbox GL."""
+    """Service for locating ERO offices using the Mapbox REST API."""
 
     def __init__(self):
-        self.client = mapbox.Client(access_token=settings.mapbox_access_token)
+        self.access_token = settings.mapbox_access_token
 
     async def find_ero_office(self, pincode: str) -> Optional[Dict[str, Any]]:
         """
         Find the nearest ERO office for a given pincode.
-        Returns real data from Mapbox GL API.
+        Uses Mapbox Geocoding API v6 + Search API.
         """
         try:
-            # First, geocode the pincode to get coordinates
-            geocode_result = self.client.geocode(f"{pincode}, India")
-            if not geocode_result:
+            # Step 1: Geocode the pincode to get coordinates
+            geo_resp = requests.get(
+                GEOCODE_URL,
+                params={
+                    "q": f"{pincode}, India",
+                    "access_token": self.access_token,
+                    "limit": 1,
+                    "country": "IN",
+                },
+                timeout=10,
+            )
+            geo_resp.raise_for_status()
+            geo_data = geo_resp.json()
+
+            features = geo_data.get("features", [])
+            if not features:
                 logger.warning(f"Could not geocode pincode: {pincode}")
                 return None
 
-            location = geocode_result[0]["geometry"]["coordinates"]
-            lon, lat = location  # Mapbox GL returns [lon, lat]
+            coords = features[0]["geometry"]["coordinates"]
+            lon, lat = coords[0], coords[1]
 
-            # Search for ERO offices nearby
-            places_result = self.client.places_nearby(
-                location=[lon, lat],
-                radius=10000,  # 10km radius
-                query="Electoral Registration Officer ERO",
-            )
+            # Step 2: Search for ERO / election office nearby
+            search_queries = [
+                "Electoral Registration Officer",
+                "Election Commission office",
+                "Collector office",
+            ]
 
-            if not places_result.get("features"):
-                # Try alternative search terms
-                places_result = self.client.places_nearby(
-                    location=[lon, lat],
-                    radius=10000,
-                    query="CEO office election commission",
+            place = None
+            for query in search_queries:
+                search_resp = requests.get(
+                    SEARCH_URL,
+                    params={
+                        "q": query,
+                        "access_token": self.access_token,
+                        "proximity": f"{lon},{lat}",
+                        "limit": 1,
+                        "country": "IN",
+                        "language": "en",
+                    },
+                    timeout=10,
                 )
+                search_resp.raise_for_status()
+                search_data = search_resp.json()
 
-            if not places_result.get("features"):
+                if search_data.get("features"):
+                    place = search_data["features"][0]
+                    break
+
+            if not place:
                 logger.warning(f"No ERO office found near pincode: {pincode}")
                 return None
 
-            # Get the first result
-            place = places_result["features"][0]
-            place_center = place["center"]
+            # Extract place details
+            place_coords = place["geometry"]["coordinates"]
+            place_lon, place_lat = place_coords[0], place_coords[1]
+            properties = place.get("properties", {})
+            context = properties.get("context", {})
 
-            # Calculate distance (simplified - using straight-line distance)
-            # In production, you could use Mapbox Directions API for actual driving distance
-            distance_km = self._calculate_distance(
-                lon, lat,
-                place_center["coordinates"][0],
-                place_center["coordinates"][1]
+            distance_km = self._calculate_distance(lon, lat, place_lon, place_lat)
+            directions_url = (
+                f"https://www.google.com/maps/dir/?api=1"
+                f"&destination={place_lat},{place_lon}"
             )
 
-            # Generate directions URL
-            directions_url = f"https://www.google.com/maps/dir/?api=1&destination={place_center['coordinates'][1]},{place_center['coordinates'][0]}"
-
             return {
-                "name": place.get("place_name", "Electoral Registration Officer"),
-                "address": place.get("place_name", ""),  # Mapbox uses place_name for formatted address
-                "phone": place.get("context", {}).get("phone", "N/A"),
-                "email": place.get("context", {}).get("email", "N/A"),
+                "name": properties.get("name", "Electoral Registration Officer"),
+                "address": properties.get("full_address", properties.get("place_formatted", "")),
+                "phone": context.get("phone", {}).get("name", "N/A"),
+                "email": "N/A",  # Mapbox Search does not return email
                 "distance_km": round(distance_km, 2),
                 "directions_url": directions_url,
-                "latitude": place_center["coordinates"][1],
-                "longitude": place_center["coordinates"][0],
+                "latitude": place_lat,
+                "longitude": place_lon,
             }
 
-    def _calculate_distance(self, lon1, lat1, lon2, lat2):
-        """Calculate straight-line distance between two coordinates in km."""
-        from math import radians, sin, cos, sqrt, atan2
+        except requests.RequestException as e:
+            logger.error(f"Mapbox API request failed for pincode {pincode}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error finding ERO office for pincode {pincode}: {e}")
+            return None
 
-        # Convert to radians
+    def _calculate_distance(self, lon1: float, lat1: float, lon2: float, lat2: float) -> float:
+        """Calculate straight-line distance between two coordinates in km (Haversine formula)."""
         lat1, lon1 = radians(lat1), radians(lon1)
         lat2, lon2 = radians(lat2), radians(lon2)
 
-        # Haversine formula
         dlat = lat2 - lat1
         dlon = lon2 - lon1
 
         a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-        c = 2 * atan2(sqrt(a) / (1 - a))
-
-        r = 6371  # Earth's radius in km
-        return r * c
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return 6371 * c  # Earth's radius in km
 
 
 # Singleton instance
 ero_locator_service = EROLocatorService()
-EOF
