@@ -1,6 +1,3 @@
-Here is the complete, integrated README file in a single block so you can copy and paste it straight into your repository.
-
-```markdown
 # 🇮🇳 MatdaanMitra (मतदान मित्र) 
 **Your intelligent, conversational, and localized guide to navigating the Indian election process.**
 
