@@ -1,65 +1,80 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from src.config.settings import settings
-from src.api.routes.health import router as health_router
+"""
+main.py — FastAPI application entry point
+
+Critical fix: the previous version only registered the health router.
+All feature routes (chat, ero, voter, profile, tts) were defined but
+never mounted, making the entire API unreachable.
+
+This version registers every router at the root level to match the
+frontend's API call paths:
+  POST /chat         → chat.py
+  GET  /ero/{pin}   → ero.py
+  GET  /voter/status → voter.py
+  GET/POST /profile  → profile.py
+  POST /tts          → tts.py
+  GET  /health       → health.py
+"""
+
 import logging
-import time
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .middleware.rate_limit import RateLimitMiddleware
+from .routes.health  import router as health_router
+from .routes.chat    import router as chat_router
+from .routes.ero     import router as ero_router
+from .routes.voter   import router as voter_router
+from .routes.profile import router as profile_router
+from .routes.tts     import router as tts_router
+from ..config.settings import settings
 
 logging.basicConfig(
-    level=getattr(logging, settings.log_level, logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
 )
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"Matdaan Mitra API starting — env: {settings.environment}")
-    logger.info(f"GCP Project: {settings.gcp_project_id}")
+    """Startup / shutdown lifecycle hooks."""
+    logger.info("MatdaanMitra API starting — environment: %s", settings.environment)
     yield
-    logger.info("Matdaan Mitra API shutting down")
+    logger.info("MatdaanMitra API shutting down")
+
 
 app = FastAPI(
-    title="Matdaan Mitra API",
-    description="ECI voter registration assistance — RAG-powered",
+    title="MatdaanMitra API",
+    description="Intelligent voter assistance platform for Indian elections.",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.is_dev else None,
-    redoc_url="/redoc" if settings.is_dev else None,
+    docs_url="/docs" if settings.environment == "development" else None,
+    redoc_url=None,
 )
 
+# ── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=[settings.frontend_url, "http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    start = time.time()
-    response = await call_next(request)
-    ms = round((time.time() - start) * 1000)
-    logger.info(
-        f"{request.method} {request.url.path} "
-        f"→ {response.status_code} ({ms}ms)"
-    )
-    return response
+# ── Rate limiting (Redis-backed) ───────────────────────────────────────────────
+app.add_middleware(RateLimitMiddleware)
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(
-        f"Unhandled error on {request.url.path}: {exc}",
-        exc_info=True
-    )
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "Internal server error",
-            "detail": str(exc) if settings.is_dev else "Something went wrong"
-        }
-    )
+# ── Routers ────────────────────────────────────────────────────────────────────
+# NOTE: order matters for OpenAPI docs; keep health first so it's easy to find.
+app.include_router(health_router)   # GET  /health
+app.include_router(chat_router)     # POST /chat
+app.include_router(ero_router)      # GET  /ero/{pincode}
+app.include_router(voter_router)    # GET  /voter/status
+app.include_router(profile_router)  # GET/POST /profile/...
+app.include_router(tts_router)      # POST /tts
 
-app.include_router(health_router)
+logger.info(
+    "Routers mounted: health · chat · ero · voter · profile · tts"
+)

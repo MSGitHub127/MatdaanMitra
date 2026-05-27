@@ -4,7 +4,7 @@ import re
 import logging
 
 from ..middleware.auth import verify_firebase_token
-from ..services.ero_locator import ero_locator_service
+from ...services.ero_locator import ero_locator_service
 
 logger = logging.getLogger(__name__)
 

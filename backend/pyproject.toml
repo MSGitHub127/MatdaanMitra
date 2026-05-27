@@ -13,11 +13,11 @@ dependencies = [
     "langgraph>=0.2.45",
     "langchain-google-vertexai>=2.0.5",
     "google-cloud-aiplatform>=1.71.1",
-    "google-cloud-translate>=3.15.3",
+    # google-cloud-translate removed — Sarvam AI handles all translation via httpx
     "google-cloud-storage>=2.18.2",
     "google-cloud-firestore>=2.19.0",
     "firebase-admin>=6.5.0",
-    "mapbox-gl>=0.15.0",
+    # mapbox-gl removed — JavaScript library, not a Python package
     "httpx>=0.27.2",
     "tenacity>=9.0.0",
     "cryptography>=43.0.3",

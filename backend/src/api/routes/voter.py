@@ -4,7 +4,7 @@ import re
 import logging
 
 from ..middleware.auth import verify_firebase_token
-from ..services.voter_search import voter_search_service
+from ...services.voter_search import voter_search_service
 
 logger = logging.getLogger(__name__)
 

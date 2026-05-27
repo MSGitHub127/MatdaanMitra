@@ -1,5 +1,26 @@
-from langgraph.graph import StateGraph, END
+"""
+graph.py — LangGraph agent workflow for MatdaanMitra
+
+Routing logic (fixed):
+  intent → profile_builder → (route_after_profile)
+      ├─ "retrieve"  → rag_retrieval → synthesis
+      ├─ "lookup"    → live_lookup   → synthesis
+      └─ "direct"    → synthesis
+
+  synthesis → guardrail → (should_translate)
+      ├─ "translate" → translation → END
+      └─ "skip"      → END
+
+Previous bug: live_lookup was only reachable after rag_retrieval,
+but voter_lookup/ero_location intents skip RAG, making live_lookup
+unreachable. Fixed by adding a direct profile_builder → live_lookup path.
+"""
+
+import logging
 from typing import Literal
+
+from langgraph.graph import StateGraph, END
+
 from .state import AgentState
 from .nodes import (
     intent_node,
@@ -10,86 +31,85 @@ from .nodes import (
     guardrail_node,
     translation_node,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
 
-def should_retrieve(state: AgentState) -> Literal["retrieve", "skip"]:
-    """Determine if RAG retrieval is needed based on intent."""
+# ── Routing functions ─────────────────────────────────────────────────────────
+
+def route_after_profile_builder(
+    state: AgentState,
+) -> Literal["retrieve", "lookup", "synthesis"]:
+    """
+    Single routing function from profile_builder.
+    Replaces the previous two-stage (should_retrieve → should_lookup) approach
+    that left live_lookup unreachable for voter_lookup/ero_location intents.
+    """
     intent = state.get("intent")
-    if intent in ["form_guidance", "deadline_query", "document_check"]:
+
+    if intent in ("form_guidance", "deadline_query", "document_check"):
         return "retrieve"
-    return "skip"
 
-
-def should_lookup(state: AgentState) -> Literal["lookup", "skip"]:
-    """Determine if live data lookup is needed based on intent."""
-    intent = state.get("intent")
-    if intent in ["voter_lookup", "ero_location"]:
+    if intent in ("voter_lookup", "ero_location"):
         return "lookup"
-    return "skip"
+
+    # profile_collection, grievance_help, off_topic, unknown → skip both
+    return "synthesis"
 
 
 def should_translate(state: AgentState) -> Literal["translate", "skip"]:
-    """Determine if translation is needed."""
-    language = state.get("response_language", "en")
-    if language != "en":
-        return "translate"
-    return "skip"
+    """Only translate when the target language is not English."""
+    lang = state.get("response_language", "en")
+    return "translate" if lang and lang.lower() not in ("en", "en-in", "english") else "skip"
 
+
+# ── Graph construction ────────────────────────────────────────────────────────
 
 def create_agent_graph() -> StateGraph:
-    """
-    Creates the LangGraph agent workflow.
-    """
     workflow = StateGraph(AgentState)
 
-    # Add nodes
-    workflow.add_node("intent", intent_node)
+    # Nodes
+    workflow.add_node("intent_classifier", intent_node)
     workflow.add_node("profile_builder", profile_builder_node)
-    workflow.add_node("rag_retrieval", rag_retrieval_node)
-    workflow.add_node("live_lookup", live_lookup_node)
-    workflow.add_node("synthesis", synthesis_node)
-    workflow.add_node("guardrail", guardrail_node)
-    workflow.add_node("translation", translation_node)
+    workflow.add_node("rag_retrieval",   rag_retrieval_node)
+    workflow.add_node("live_lookup",     live_lookup_node)
+    workflow.add_node("synthesis",       synthesis_node)
+    workflow.add_node("guardrail",       guardrail_node)
+    workflow.add_node("translation",     translation_node)
 
-    # Set entry point
-    workflow.set_entry_point("intent")
+    # Entry
+    workflow.set_entry_point("intent_classifier")
 
-    # Add edges
-    workflow.add_edge("intent", "profile_builder")
+    # Intent → profile builder (always)
+    workflow.add_edge("intent_classifier", "profile_builder")
 
-    # Conditional edges for RAG retrieval
+    # Profile builder → RAG / live lookup / synthesis (fixed routing)
     workflow.add_conditional_edges(
         "profile_builder",
-        should_retrieve,
+        route_after_profile_builder,
         {
-            "retrieve": "rag_retrieval",
-            "skip": "synthesis",
+            "retrieve":  "rag_retrieval",
+            "lookup":    "live_lookup",
+            "synthesis": "synthesis",
         },
     )
 
-    # Conditional edges for live lookup
-    workflow.add_conditional_edges(
-        "rag_retrieval",
-        should_lookup,
-        {
-            "lookup": "live_lookup",
-            "skip": "synthesis",
-        },
-    )
+    # RAG retrieval always flows to synthesis
+    workflow.add_edge("rag_retrieval", "synthesis")
 
+    # Live lookup always flows to synthesis
     workflow.add_edge("live_lookup", "synthesis")
+
+    # Synthesis → guardrail (always)
     workflow.add_edge("synthesis", "guardrail")
 
-    # Conditional edges for translation
+    # Guardrail → translation or END
     workflow.add_conditional_edges(
         "guardrail",
         should_translate,
         {
             "translate": "translation",
-            "skip": END,
+            "skip":      END,
         },
     )
 
@@ -98,5 +118,5 @@ def create_agent_graph() -> StateGraph:
     return workflow.compile()
 
 
-# Compile the graph
+# Module-level singleton — imported by chat.py
 agent_graph = create_agent_graph()

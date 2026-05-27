@@ -1,66 +1,91 @@
-from google.cloud import aiplatform
-from typing import List, Dict, Any, Optional
+"""
+vector_search.py — Vertex AI Matching Engine wrapper
+
+Fix: Previous implementation called aiplatform.MatchingEngineIndexEndpoint
+     in __init__, which crashed at module import when Vertex AI credentials
+     were absent. Now uses lazy initialization — the endpoint is only
+     instantiated on the first actual search() call.
+"""
+
 import logging
+from typing import Any, Optional
+
 from ..config.settings import settings
 
 logger = logging.getLogger(__name__)
 
 
 class VectorSearchService:
-    """Service for searching ECI document embeddings using Vertex AI Vector Search."""
+    """Async wrapper around Vertex AI Matching Engine (Vector Search)."""
 
-    def __init__(self):
-        aiplatform.init(
-            project=settings.gcp_project_id,
-            location=settings.gcp_location,
-        )
-        self.index_endpoint = aiplatform.MatchingEngineIndexEndpoint(
-            index_endpoint_name=settings.vertex_ai_index_endpoint_id
-        )
+    def __init__(self) -> None:
+        # Defer all Vertex AI SDK calls until first use
+        self._endpoint = None
+
+    def _get_endpoint(self):
+        """Lazily initialise the Matching Engine endpoint."""
+        if self._endpoint is None:
+            from google.cloud import aiplatform
+            aiplatform.init(
+                project=settings.gcp_project_id,
+                location=settings.gcp_location,
+            )
+            self._endpoint = aiplatform.MatchingEngineIndexEndpoint(
+                index_endpoint_name=settings.vertex_ai_index_endpoint_id
+            )
+        return self._endpoint
 
     async def search(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = 5,
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> Optional[list[dict[str, Any]]]:
         """
-        Search for similar documents in the vector index.
-        Returns list of chunks with metadata.
+        Search for nearest neighbours in the Vertex AI Vector index.
+
+        Returns a list of dicts with keys:
+          chunk_id  — the document chunk identifier (str)
+          distance  — cosine distance (float, lower = more similar)
+
+        The caller is responsible for fetching full metadata (text, source_url,
+        form_type, section) from Firestore using chunk_id.
+
+        Returns None on any error — callers should fall back to static corpus.
         """
+        if not settings.vertex_ai_index_endpoint_id or not settings.vertex_ai_index_id:
+            logger.debug("Vertex AI index not configured — returning None")
+            return None
+
         try:
-            response = self.index_endpoint.find_neighbors(
-                deployed_index_id=settings.vertex_ai_index_id,
-                queries=[query_embedding],
-                num_neighbors=top_k,
-            )
+            import asyncio
+            endpoint = self._get_endpoint()
+
+            def _sync_search():
+                return endpoint.find_neighbors(
+                    deployed_index_id=settings.vertex_ai_index_id,
+                    queries=[query_embedding],
+                    num_neighbors=top_k,
+                )
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, _sync_search)
 
             if not response or not response[0]:
-                logger.warning("No results found in vector search")
+                logger.info("Vector search returned no neighbors")
                 return []
 
-            results = []
-            for neighbor in response[0]:
-                # MatchNeighbor only exposes .id and .distance.
-                # Fetch full metadata (text, source_url, etc.) from your
-                # external store (GCS / Firestore / BigQuery) using chunk_id.
-                results.append({
+            return [
+                {
                     "chunk_id": neighbor.id,
-                    "distance": neighbor.distance,
-                    # Metadata fields below must be populated by a separate
-                    # lookup against your document store using chunk_id.
-                    "text": "",
-                    "confidence": neighbor.distance,
-                    "source_url": "",
-                    "form_type": "",
-                    "section": "",
-                })
+                    "distance": float(neighbor.distance),
+                }
+                for neighbor in response[0]
+            ]
 
-            return results
-
-        except Exception as e:
-            logger.error(f"Vector search error: {e}")
+        except Exception as exc:
+            logger.error("Vector search error: %s", exc)
             return None
 
 
-# Singleton instance
+# Singleton — safe to import even without Vertex AI credentials
 vector_search_service = VectorSearchService()

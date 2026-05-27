@@ -2,27 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
-
+/* ── Design tokens ──────────────────────────────────────────── */
 :root {
-  --bg: #04070E;
-  --surface: #080D18;
-  --card: #0F1A2E;
-  --border: #162338;
-  --saffron: #FF9500;
-  --saffron-warm: #FFB347;
+  --bg: #030508;
+  --surface: #091120;
+  --card: #0D1829;
+  --border: #18304A;
+  --border-fine: #1C3854;
+  --saffron: #F97316;
+  --saffron-warm: #FB923C;
+  --saffron-dim: rgba(249, 115, 22, 0.10);
+  --saffron-glow: rgba(249, 115, 22, 0.18);
+  --saffron-trace: rgba(249, 115, 22, 0.06);
   --emerald: #10B981;
-  --sapphire: #3B82F6;
-  --amber: #F59E0B;
-  --rose: #F43F5E;
-  --ink: #E8EDF8;
-  --ink-dim: #8AA0C0;
-  --ink-faint: #3A5070;
+  --emerald-dim: rgba(16, 185, 129, 0.10);
+  --sapphire: #38BDF8;
+  --sapphire-dim: rgba(56, 189, 248, 0.10);
+  --amber: #FBBF24;
+  --amber-dim: rgba(251, 191, 36, 0.10);
+  --rose: #FB7185;
+  --rose-dim: rgba(251, 113, 133, 0.10);
+  --violet: #A78BFA;
+  --violet-dim: rgba(167, 139, 250, 0.10);
+  --ink: #EDF2F7;
+  --ink-dim: #7D9AB5;
+  --ink-faint: #3A5470;
+  --ink-ghost: #1E3550;
+  /* Tricolor */
+  --tri-saffron: #FF9933;
+  --tri-white: #F0EDE6;
+  --tri-green: #138808;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+/* ── Reset ──────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -31,39 +46,226 @@ body {
   height: 100%;
   background-color: var(--bg);
   color: var(--ink);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Instrument Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body {
   overflow: hidden;
 }
 
-/* Tricolor header line */
-.tricolor-header {
-  height: 3px;
-  background: linear-gradient(to right, #FF9933 33.33%, #FFFFFF 33.33%, #FFFFFF 66.66%, #138808 66.66%);
+/* ── Typography helpers ──────────────────────────────────────── */
+.font-display {
+  font-family: 'Fraunces', Georgia, serif;
 }
 
-/* Grain overlay */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Tricolor header strip ───────────────────────────────────── */
+.tricolor-header {
+  height: 3px;
+  background: linear-gradient(to right,
+      var(--tri-saffron) 33.33%,
+      var(--tri-white) 33.33% 66.66%,
+      var(--tri-green) 66.66%);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 30;
+}
+
+/* ── Grain overlay ───────────────────────────────────────────── */
 .grain-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   pointer-events: none;
   opacity: 0.025;
   z-index: 9999;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   animation: grain 8s steps(10) infinite;
 }
 
-/* Scrollbar styling */
+/* ── Atmospheric background radials ─────────────────────────── */
+.atmo-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.atmo-bg::before {
+  content: '';
+  position: absolute;
+  top: -15%;
+  left: 15%;
+  width: 800px;
+  height: 800px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.04) 0%, transparent 65%);
+}
+
+.atmo-bg::after {
+  content: '';
+  position: absolute;
+  bottom: -25%;
+  right: 5%;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.03) 0%, transparent 60%);
+}
+
+/* ── Keyframes ───────────────────────────────────────────────── */
+@keyframes grain {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-1%, 2%);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tickPop {
+  0% {
+    transform: scale(0) rotate(-30deg);
+  }
+
+  60% {
+    transform: scale(1.25) rotate(5deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes glowRing {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(249, 115, 22, 0);
+  }
+}
+
+@keyframes shimmerFire {
+  0% {
+    background-position: 200% center;
+  }
+
+  100% {
+    background-position: -200% center;
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes spinSlow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+
+  0%,
+  100% {
+    opacity: 0.03;
+  }
+
+  50% {
+    opacity: 0.065;
+  }
+}
+
+/* ── Utility animation classes ───────────────────────────────── */
+.fade-up {
+  animation: fadeSlideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease both;
+}
+
+.slide-dn {
+  animation: slideDown 0.2s ease both;
+}
+
+/* ── Shimmer text effect ─────────────────────────────────────── */
+.shimmer-fire {
+  background: linear-gradient(90deg, var(--saffron), var(--saffron-warm), var(--saffron));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerFire 3s linear infinite;
+}
+
+/* ── Glass morphism ──────────────────────────────────────────── */
+.glass {
+  background: linear-gradient(135deg,
+      rgba(17, 32, 52, 0.85) 0%,
+      rgba(9, 17, 32, 0.6) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 3px;
+  height: 3px;
 }
 
 ::-webkit-scrollbar-track {
@@ -71,16 +273,23 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: var(--ink-ghost);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ink-faint);
 }
 
-/* Reduced motion */
+/* ── Focus ───────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -92,18 +301,4 @@ body {
   .grain-overlay {
     display: none;
   }
-}
-
-/* Focus styles for accessibility */
-:focus-visible {
-  outline: 2px solid var(--saffron);
-  outline-offset: 2px;
-}
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid var(--saffron);
-  outline-offset: 2px;
 }

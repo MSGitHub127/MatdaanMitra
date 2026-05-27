@@ -4,7 +4,7 @@ import firebase_admin
 from firebase_admin import auth, credentials
 from typing import Optional
 import logging
-from ..config.settings import settings
+from ...config.settings import settings
 
 logger = logging.getLogger(__name__)
 
