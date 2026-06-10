@@ -72,3 +72,11 @@ temp/
 !tailwind.config.ts
 !next.config.ts
 !pyproject.toml
+
+# Terraform
+infrastructure/terraform/.terraform/
+infrastructure/terraform/terraform.tfvars
+
+# Firebase/Environment
+.env
+.firebaserc
