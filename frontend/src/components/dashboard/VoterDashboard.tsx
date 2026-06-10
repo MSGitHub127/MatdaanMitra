@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useState, useCallback } from 'react';
 import type { VoterProfile } from '../../types/voter';
 import StatGrid from './StatGrid';
 import RegistrationTimeline from './RegistrationTimeline';
@@ -29,21 +30,68 @@ const GRIEVANCE_TYPES = [
   { icon: '🗑️', title: 'Name on Roll but Moved', form: 'Form 7 (deletion)', desc: 'Remove entry from old constituency', color: 'var(--violet)' },
 ];
 
+// Issue type → backend key mapping
+const ISSUE_KEYS = ['missing_name', 'wrong_details', 'address_update', 'duplicate_entry'];
+
 interface VoterDashboardProps {
   profile: VoterProfile;
+  sessionId: string;
   onUpdateChecklist: (checklist: Record<string, boolean>) => void;
   activeTab?: number;
   onTabChange?: (tab: number) => void;
 }
 
 export default function VoterDashboard({
-  profile, onUpdateChecklist, activeTab = 0, onTabChange,
+  profile, sessionId, onUpdateChecklist, activeTab = 0, onTabChange,
 }: VoterDashboardProps) {
 
   const setTab = (i: number) => onTabChange?.(i);
-
-  // BLO info derived from profile
   const constituency = profile.current_state ?? 'Your Constituency';
+
+  // Grievance letter state
+  const [selectedIssue, setSelectedIssue] = useState<number | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  const handleDownloadLetter = useCallback(async () => {
+    const issueIndex = selectedIssue ?? 0;
+    const issueType = ISSUE_KEYS[issueIndex];
+    setPdfLoading(true);
+    setPdfError(null);
+
+    try {
+      const { getAuth } = await import('firebase/auth');
+      const user = getAuth().currentUser;
+      if (!user) throw new Error('Not authenticated');
+      const token = await user.getIdToken();
+
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
+      const res = await fetch(`${BACKEND_URL}/grievance/letter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ session_id: sessionId, issue_type: issueType }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail ?? `Request failed (${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `voter_complaint_${issueType}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : 'Download failed. Please try again.');
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [sessionId, selectedIssue]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
@@ -235,15 +283,19 @@ export default function VoterDashboard({
               <h3 className="font-display" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14 }}>
                 What Issue Are You Facing?
               </h3>
-              {GRIEVANCE_TYPES.map(g => (
-                <div key={g.title} style={{
+              <p style={{ fontSize: 11, color: 'var(--ink-dim)', marginBottom: 10 }}>
+                Select your issue type, then generate your pre-filled complaint letter.
+              </p>
+              {GRIEVANCE_TYPES.map((g, i) => (
+                <div key={g.title} onClick={() => setSelectedIssue(i)} style={{
                   display: 'flex', gap: 12, padding: '11px 12px',
-                  borderRadius: 10, background: 'var(--surface)',
-                  border: '1px solid var(--border)', marginBottom: 7,
-                  cursor: 'pointer', transition: 'all .14s',
+                  borderRadius: 10,
+                  background: selectedIssue === i ? 'var(--violet-dim)' : 'var(--surface)',
+                  border: `1px solid ${selectedIssue === i ? 'rgba(167,139,250,0.55)' : 'var(--border)'}`,
+                  marginBottom: 7, cursor: 'pointer', transition: 'all .14s',
                 }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                  onMouseEnter={e => { if (selectedIssue !== i) e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'; }}
+                  onMouseLeave={e => { if (selectedIssue !== i) e.currentTarget.style.borderColor = selectedIssue === i ? 'rgba(167,139,250,0.55)' : 'var(--border)'; }}
                 >
                   <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{g.icon}</span>
                   <div style={{ flex: 1 }}>
@@ -256,9 +308,10 @@ export default function VoterDashboard({
                       href="https://eci.gov.in"
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
                       style={{ fontSize: 10, color: 'var(--ink-ghost)', marginTop: 2, display: 'block', textDecoration: 'none' }}
                     >
-                      Download →
+                      Download form →
                     </a>
                   </div>
                 </div>
@@ -278,21 +331,41 @@ export default function VoterDashboard({
                     Grievance Letter Generator
                   </div>
                   <p style={{ fontSize: 11.5, color: 'var(--ink-dim)', marginTop: 4, lineHeight: 1.6 }}>
-                    Generates a pre-filled complaint letter using your voter profile — ready to print and submit to your BLO or CEO office.
+                    {selectedIssue !== null
+                      ? `Generating letter for: ${GRIEVANCE_TYPES[selectedIssue].title}`
+                      : 'Select an issue above, then click to generate your pre-filled complaint letter.'}
                   </p>
                 </div>
               </div>
-              <button style={{
-                all: 'unset', cursor: 'pointer', width: '100%',
-                background: 'linear-gradient(135deg, var(--violet), #6D28D9)',
-                color: '#fff', borderRadius: 10, padding: '11px',
-                textAlign: 'center', fontSize: 13, fontWeight: 700,
-                boxShadow: '0 4px 16px var(--violet-dim)',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+
+              {pdfError && (
+                <div style={{ marginBottom: 10, padding: '8px 12px', background: 'var(--rose-dim)', border: '1px solid rgba(251,113,133,0.3)', borderRadius: 9, fontSize: 11.5, color: 'var(--rose)' }}>
+                  {pdfError}
+                </div>
+              )}
+
+              <button
+                onClick={handleDownloadLetter}
+                disabled={pdfLoading}
+                style={{
+                  all: 'unset',
+                  cursor: pdfLoading ? 'wait' : 'pointer',
+                  width: '100%',
+                  background: selectedIssue !== null
+                    ? 'linear-gradient(135deg, var(--violet), #6D28D9)'
+                    : 'var(--card)',
+                  color: selectedIssue !== null ? '#fff' : 'var(--ink-ghost)',
+                  borderRadius: 10, padding: '11px',
+                  textAlign: 'center', fontSize: 13, fontWeight: 700,
+                  boxShadow: selectedIssue !== null ? '0 4px 16px var(--violet-dim)' : 'none',
+                  border: `1px solid ${selectedIssue !== null ? 'transparent' : 'var(--border)'}`,
+                  opacity: pdfLoading ? 0.6 : 1,
+                  transition: 'all .15s',
+                }}
+                onMouseEnter={e => { if (!pdfLoading && selectedIssue !== null) e.currentTarget.style.opacity = '0.88'; }}
+                onMouseLeave={e => { if (!pdfLoading) e.currentTarget.style.opacity = '1'; }}
               >
-                ✨ Generate My Complaint Letter (PDF)
+                {pdfLoading ? '⏳ Generating PDF…' : '✨ Generate My Complaint Letter (PDF)'}
               </button>
             </div>
           </div>

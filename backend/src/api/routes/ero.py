@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, constr
 import re
 import logging
@@ -25,7 +25,7 @@ class EROOfficeResponse(BaseModel):
 @router.get("/ero/{pincode}", response_model=EROOfficeResponse)
 async def get_ero_location(
     pincode: str,
-    uid: str = verify_firebase_token,
+    uid: str = Depends(verify_firebase_token),
 ):
     """
     Get ERO office location by pincode.

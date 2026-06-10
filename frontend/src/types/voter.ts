@@ -1,15 +1,24 @@
-export type RegistrationType = "new" | "relocation" | "correction" | "nri";
+export type RegistrationType = 'new' | 'relocation' | 'correction' | 'nri';
 
 export interface VoterProfile {
+  // Identity
   name?: string;
+  epic_number?: string;
+  preferred_language?: string;
+
+  // Location
   current_state?: string;
   current_pincode?: string;
   previous_state?: string;
   previous_constituency?: string;
+
+  // Registration
   registration_type?: RegistrationType;
-  epic_number?: string;
-  preferred_language?: string;
   checklist?: Record<string, boolean>;
+
+  // Dates (ISO strings set by backend / Firestore)
+  registered_at?: string;
+  last_updated?: string;
 }
 
 export interface RetrievedChunk {
@@ -23,7 +32,7 @@ export interface RetrievedChunk {
 
 export interface Message {
   id: string;
-  role: "user" | "bot";
+  role: 'user' | 'bot';
   text: string;
   timestamp: Date;
   isStreaming?: boolean;
@@ -45,6 +54,9 @@ export interface AgentTraceEntry {
 }
 
 export interface VoterStatus {
+  found: boolean | null;
+  nvsp_redirect: boolean;
+  nvsp_url?: string;
   epic_number: string;
   name: string;
   father_name: string;
@@ -54,7 +66,9 @@ export interface VoterStatus {
   polling_station: string;
   assembly_constituency: string;
   parliamentary_constituency: string;
-  status: "active" | "inactive" | "pending";
+  status: string;
+  message?: string;
+  reason?: string;
 }
 
 export interface EROOffice {

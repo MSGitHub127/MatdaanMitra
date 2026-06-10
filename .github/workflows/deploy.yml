@@ -1,0 +1,290 @@
+name: Deploy MatdaanMitra
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCP_REGION:   asia-south1
+  REGISTRY:     asia-south1-docker.pkg.dev
+  REPO:         matdaan-mitra
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 1 — Backend tests
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
+        env:
+          GCP_PROJECT_ID:              test-project
+          GCP_LOCATION:                asia-south1
+          FIREBASE_SERVICE_ACCOUNT_PATH: ""
+          SARVAM_API_KEY:              test-key
+          MAPBOX_ACCESS_TOKEN:         test-token
+          FERNET_KEY:                  ""
+          REDIS_URL:                   redis://localhost:6379
+          ENVIRONMENT:                 test
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2 — Frontend type-check
+  # ─────────────────────────────────────────────────────────────────────────────
+  test-frontend:
+    name: Frontend Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+        env:
+          NEXT_PUBLIC_BACKEND_URL:            https://placeholder.run.app
+          NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN:    pk.placeholder
+          NEXT_PUBLIC_FIREBASE_API_KEY:       placeholder
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:   placeholder.firebaseapp.com
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID:    placeholder
+          NEXT_PUBLIC_FIREBASE_APP_ID:        1:000:web:000
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 3 — Build & push backend Docker image
+  # Runs only on push to main (not PRs)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-backend:
+    name: Build Backend Image
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push backend image
+        id: meta
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ vars.GCP_PROJECT_ID }}/${{ env.REPO }}/backend"
+          TAG="${{ github.sha }}"
+          docker build \
+            --tag "${IMAGE}:${TAG}" \
+            --tag "${IMAGE}:latest" \
+            --cache-from "${IMAGE}:latest" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            backend/
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
+          echo "image=${IMAGE}:${TAG}" >> $GITHUB_OUTPUT
+        env:
+          DOCKER_BUILDKIT: 1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 4 — Build & push frontend Docker image
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-frontend:
+    name: Build Frontend Image
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push frontend image
+        id: meta
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ vars.GCP_PROJECT_ID }}/${{ env.REPO }}/frontend"
+          TAG="${{ github.sha }}"
+          docker build \
+            --tag "${IMAGE}:${TAG}" \
+            --tag "${IMAGE}:latest" \
+            --cache-from "${IMAGE}:latest" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg NEXT_PUBLIC_BACKEND_URL="${{ vars.NEXT_PUBLIC_BACKEND_URL }}" \
+            --build-arg NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN="${{ secrets.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" \
+            frontend/
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
+          echo "image=${IMAGE}:${TAG}" >> $GITHUB_OUTPUT
+        env:
+          DOCKER_BUILDKIT: 1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 5 — Deploy backend via Terraform
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend (Cloud Run)
+    needs: build-backend
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~> 1.7'
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="project_id=${{ vars.GCP_PROJECT_ID }}" \
+            -var="firebase_project_id=${{ vars.FIREBASE_PROJECT_ID }}" \
+            -var="backend_image=${{ needs.build-backend.outputs.image }}" \
+            -var="frontend_image=${{ env.REGISTRY }}/${{ vars.GCP_PROJECT_ID }}/${{ env.REPO }}/frontend:latest" \
+            -var="sarvam_api_key=${{ secrets.SARVAM_API_KEY }}" \
+            -var="mapbox_access_token=${{ secrets.MAPBOX_ACCESS_TOKEN }}" \
+            -var="fernet_key=${{ secrets.FERNET_KEY }}" \
+            -var="firebase_service_account_json=${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" \
+            -var="redis_url=${{ secrets.REDIS_URL }}" \
+            -var="vertex_ai_index_id=${{ vars.VERTEX_AI_INDEX_ID }}" \
+            -var="vertex_ai_index_endpoint_id=${{ vars.VERTEX_AI_INDEX_ENDPOINT_ID }}" \
+            -out=tfplan
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 6 — Deploy frontend to Firebase Hosting
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend (Firebase Hosting)
+    needs: [build-frontend, deploy-backend]
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js (static assets only for Hosting CDN)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_BACKEND_URL:            ${{ vars.NEXT_PUBLIC_BACKEND_URL }}
+          NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN:    ${{ secrets.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}
+          NEXT_PUBLIC_FIREBASE_API_KEY:       ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:   ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID:    ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID:        ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken:              ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          channelId:              live
+          projectId:              ${{ vars.FIREBASE_PROJECT_ID }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 7 — Smoke test deployed endpoints
+  # ─────────────────────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke Test
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Health check backend
+        run: |
+          BACKEND_URL="${{ vars.NEXT_PUBLIC_BACKEND_URL }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${BACKEND_URL}/health")
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Backend health check failed (HTTP $STATUS)"
+            exit 1
+          fi
+          echo "✅ Backend healthy (HTTP $STATUS)"
+
+      - name: Check frontend reachability
+        run: |
+          FRONTEND_URL="${{ vars.FRONTEND_URL }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${FRONTEND_URL}")
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Frontend not reachable (HTTP $STATUS)"
+            exit 1
+          fi
+          echo "✅ Frontend reachable (HTTP $STATUS)"

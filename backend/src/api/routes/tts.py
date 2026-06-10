@@ -9,7 +9,7 @@ Rate-limited to 20 req/min per user (enforced by the Redis middleware).
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 
 from ..middleware.auth import verify_firebase_token
@@ -38,7 +38,7 @@ class TTSResponse(BaseModel):
 @router.post("/tts", response_model=TTSResponse)
 async def synthesize_speech(
     request: TTSRequest,
-    uid: str = verify_firebase_token,
+    uid: str = Depends(verify_firebase_token),
 ):
     """
     Convert text to speech using Sarvam AI (bulbul:v1 model).

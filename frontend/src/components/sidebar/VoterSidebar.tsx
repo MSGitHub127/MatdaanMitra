@@ -313,28 +313,92 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
           {lookupResult && (
             <div className="slide-dn" style={{
               marginTop: 14,
-              background: lookupResult.status === 'active' ? 'var(--emerald-dim)' : 'var(--rose-dim)',
-              border: `1px solid ${lookupResult.status === 'active' ? 'rgba(16,185,129,0.4)' : 'rgba(251,113,133,0.4)'}`,
+              background: lookupResult.nvsp_redirect
+                ? 'var(--amber-dim)'
+                : lookupResult.found
+                  ? 'var(--emerald-dim)'
+                  : 'var(--rose-dim)',
+              border: `1px solid ${lookupResult.nvsp_redirect
+                  ? 'rgba(251,191,36,0.4)'
+                  : lookupResult.found
+                    ? 'rgba(16,185,129,0.4)'
+                    : 'rgba(251,113,133,0.4)'
+                }`,
               borderRadius: 11, padding: '12px 13px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}>{lookupResult.status === 'active' ? '✅' : '❌'}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: lookupResult.status === 'active' ? 'var(--emerald)' : 'var(--rose)' }}>
-                  {lookupResult.status === 'active' ? 'Found on Roll' : 'Not Active'}
-                </span>
-              </div>
-              {[
-                ['Name', lookupResult.name],
-                ['Constituency', lookupResult.assembly_constituency],
-                ['Polling Station', lookupResult.polling_station],
-              ].filter(([, v]) => v).map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11 }}>
-                  <span style={{ color: 'var(--ink-dim)' }}>{k}</span>
-                  <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{v}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 6, fontSize: 9.5, color: 'var(--ink-ghost)' }}>
-                Source: ECI Electoral Search API · Live result
+              {/* NVSP Redirect — ECI API blocked */}
+              {lookupResult.nvsp_redirect && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <span style={{ fontSize: 18 }}>🔗</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>
+                      Verify on Official NVSP Portal
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--ink-dim)', marginBottom: 10, lineHeight: 1.5 }}>
+                    Direct ECI API lookup is currently unavailable. Click below to verify your voter status on the official NVSP portal.
+                  </p>
+                  <a
+                    href={lookupResult.nvsp_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      background: 'var(--amber)', color: '#030508',
+                      borderRadius: 9, padding: '9px 14px',
+                      textDecoration: 'none', fontSize: 12, fontWeight: 700,
+                    }}
+                  >
+                    🗳️ Open NVSP.in →
+                  </a>
+                </>
+              )}
+
+              {/* Found on roll */}
+              {!lookupResult.nvsp_redirect && lookupResult.found && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <span style={{ fontSize: 18 }}>✅</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--emerald)' }}>
+                      Found on Electoral Roll
+                    </span>
+                  </div>
+                  {[
+                    ['Name', lookupResult.name],
+                    ['Constituency', lookupResult.assembly_constituency],
+                    ['Polling Station', lookupResult.polling_station],
+                  ].filter(([, v]) => v).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11 }}>
+                      <span style={{ color: 'var(--ink-dim)' }}>{k}</span>
+                      <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{v}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Not found */}
+              {!lookupResult.nvsp_redirect && lookupResult.found === false && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 18 }}>❌</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--rose)' }}>
+                      Not Found on Roll
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--rose)', marginBottom: 8 }}>
+                    {lookupResult.message || 'EPIC not found in ECI database.'}
+                  </p>
+                  {lookupResult.nvsp_url && (
+                    <a href={lookupResult.nvsp_url} target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 11, color: 'var(--ink-dim)', textDecoration: 'underline' }}>
+                      Verify on NVSP.in →
+                    </a>
+                  )}
+                </>
+              )}
+
+              <div style={{ marginTop: 8, fontSize: 9.5, color: 'var(--ink-ghost)' }}>
+                Source: ECI Electoral Search · Live result
               </div>
             </div>
           )}

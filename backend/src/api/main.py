@@ -22,12 +22,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .middleware.rate_limit import RateLimitMiddleware
-from .routes.health  import router as health_router
-from .routes.chat    import router as chat_router
-from .routes.ero     import router as ero_router
-from .routes.voter   import router as voter_router
-from .routes.profile import router as profile_router
-from .routes.tts     import router as tts_router
+from .routes.health    import router as health_router
+from .routes.chat      import router as chat_router
+from .routes.ero       import router as ero_router
+from .routes.voter     import router as voter_router
+from .routes.profile   import router as profile_router
+from .routes.tts       import router as tts_router
+from .routes.grievance import router as grievance_router
 from ..config.settings import settings
 
 logging.basicConfig(
@@ -68,13 +69,14 @@ app.add_middleware(RateLimitMiddleware)
 
 # ── Routers ────────────────────────────────────────────────────────────────────
 # NOTE: order matters for OpenAPI docs; keep health first so it's easy to find.
-app.include_router(health_router)   # GET  /health
-app.include_router(chat_router)     # POST /chat
-app.include_router(ero_router)      # GET  /ero/{pincode}
-app.include_router(voter_router)    # GET  /voter/status
-app.include_router(profile_router)  # GET/POST /profile/...
-app.include_router(tts_router)      # POST /tts
+app.include_router(health_router)    # GET  /health
+app.include_router(chat_router)      # POST /chat
+app.include_router(ero_router)       # GET  /ero/{pincode}
+app.include_router(voter_router)     # GET  /voter/{epic_number}
+app.include_router(profile_router)   # PATCH /profile/{session_id}/checklist
+app.include_router(tts_router)       # POST /tts
+app.include_router(grievance_router) # POST /grievance/letter
 
 logger.info(
-    "Routers mounted: health · chat · ero · voter · profile · tts"
+    "Routers mounted: health · chat · ero · voter · profile · tts · grievance"
 )

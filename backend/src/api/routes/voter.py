@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, constr
 import re
 import logging
@@ -27,7 +27,7 @@ class VoterStatusResponse(BaseModel):
 @router.get("/voter/{epic_number}", response_model=VoterStatusResponse)
 async def get_voter_status(
     epic_number: str,
-    uid: str = verify_firebase_token,
+    uid: str = Depends(verify_firebase_token),
 ):
     """
     Get voter status by EPIC number.

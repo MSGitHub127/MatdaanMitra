@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Dict, Any
 import logging
@@ -22,32 +22,32 @@ class ChecklistResponse(BaseModel):
 async def update_checklist(
     session_id: str,
     request: ChecklistUpdateRequest,
-    uid: str = verify_firebase_token,
+    uid: str = Depends(verify_firebase_token),
 ):
     """
-    Update voter document checklist.
-    Persists to Firestore.
+    Update voter document checklist for a session.
+    Uses Firestore dot-notation update (not set+merge) to avoid
+    overwriting other voterProfile fields.
     """
     try:
-        import firebase_admin
+        import firebase_admin  # noqa
         from firebase_admin import firestore
 
         db = firestore.client()
-
-        # Update checklist in Firestore
         doc_ref = db.collection("sessions").document(session_id)
-        doc_ref.set(
-            {
-                "voterProfile.checklist": request.checklist,
-                "updatedAt": firestore.SERVER_TIMESTAMP,
-            },
-            merge=True,
-        )
+
+        # update() with dot-notation key correctly writes to the nested field
+        # without touching other voterProfile fields.
+        # set() with merge=True would require a nested dict, not a dotted key.
+        doc_ref.update({
+            "voterProfile.checklist": request.checklist,
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+        })
 
         return ChecklistResponse(checklist=request.checklist)
 
     except Exception as e:
-        logger.error(f"Error updating checklist: {e}")
+        logger.error(f"Error updating checklist for session {session_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update checklist. Please try again later.",
