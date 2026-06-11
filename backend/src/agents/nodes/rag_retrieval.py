@@ -185,7 +185,7 @@ async def _fetch_chunk_metadata(chunk_ids: list[str]) -> dict[str, dict[str, Any
                     out[cid] = doc.to_dict()
             return out
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, _fetch_sync)
     except Exception as exc:
         logger.warning("Firestore metadata fetch failed: %s", exc)

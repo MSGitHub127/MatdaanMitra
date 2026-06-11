@@ -118,7 +118,7 @@ async def _load_session(session_id: str) -> tuple[dict, list[dict]]:
             history = data.get("conversationHistory", [])
             return profile, history[-(  _MAX_HISTORY_TURNS * 2):]
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         profile, history = await loop.run_in_executor(None, _sync_load)
         return _decrypt_profile_epic(profile), history
 
@@ -161,7 +161,7 @@ async def _save_session(
                 merge=True,
             )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _sync_save)
         logger.debug("Session saved for %s", session_id[-8:])
 

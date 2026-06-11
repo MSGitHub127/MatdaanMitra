@@ -1,7 +1,23 @@
+"""
+profile.py — Voter profile checklist update route
+
+PATCH /profile/{session_id}/checklist
+
+Fix: The previous version called the synchronous Firestore doc_ref.update()
+directly inside an async handler. This blocks the uvicorn event loop on
+every call. All sync Firestore operations must be wrapped in run_in_executor
+so they run on a thread-pool thread while the event loop stays free.
+
+Also uses asyncio.get_running_loop() (Python 3.10+ idiomatic) instead of
+the deprecated asyncio.get_event_loop().
+"""
+
+import asyncio
+import logging
+from typing import Dict
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Dict, Any
-import logging
 
 from ..middleware.auth import verify_firebase_token
 
@@ -25,29 +41,31 @@ async def update_checklist(
     uid: str = Depends(verify_firebase_token),
 ):
     """
-    Update voter document checklist for a session.
-    Uses Firestore dot-notation update (not set+merge) to avoid
-    overwriting other voterProfile fields.
+    Update the voter document checklist for a session in Firestore.
+
+    Uses dot-notation update so only voterProfile.checklist is touched —
+    all other voterProfile sub-fields are preserved.
     """
     try:
-        import firebase_admin  # noqa
+        import firebase_admin  # noqa: F401
         from firebase_admin import firestore
 
         db = firestore.client()
-        doc_ref = db.collection("sessions").document(session_id)
 
-        # update() with dot-notation key correctly writes to the nested field
-        # without touching other voterProfile fields.
-        # set() with merge=True would require a nested dict, not a dotted key.
-        doc_ref.update({
-            "voterProfile.checklist": request.checklist,
-            "updatedAt": firestore.SERVER_TIMESTAMP,
-        })
+        def _sync_update():
+            doc_ref = db.collection("sessions").document(session_id)
+            doc_ref.update({
+                "voterProfile.checklist": request.checklist,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            })
+
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, _sync_update)
 
         return ChecklistResponse(checklist=request.checklist)
 
-    except Exception as e:
-        logger.error(f"Error updating checklist for session {session_id}: {e}")
+    except Exception as exc:
+        logger.error("Error updating checklist for session %s: %s", session_id[-8:], exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update checklist. Please try again later.",

@@ -200,7 +200,7 @@ export default function Home() {
     <ErrorBoundary>
       {authState === 'loading' && <LoadingScreen />}
       {authState === 'unauthenticated' && (
-        <LoginScreen onAuthenticated={() => setAuthState('authenticated')} />
+        <LoginScreen onAuthenticated={(_uid, _isAnonymous) => setAuthState('authenticated')} />
       )}
       {authState === 'authenticated' && (
         // Second ErrorBoundary so an AppShell crash doesn't hide the outer UI

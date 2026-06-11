@@ -112,7 +112,7 @@ async def _get_voter_profile(session_id: str) -> dict[str, Any]:
             doc = db.collection("sessions").document(session_id).get()
             return doc.to_dict().get("voterProfile", {}) if doc.exists else {}
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync)
     except Exception as exc:
         logger.warning("Could not load profile for %s: %s", session_id[-8:], exc)

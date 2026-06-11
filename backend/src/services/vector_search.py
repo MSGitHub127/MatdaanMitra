@@ -67,7 +67,7 @@ class VectorSearchService:
                     num_neighbors=top_k,
                 )
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             response = await loop.run_in_executor(None, _sync_search)
 
             if not response or not response[0]:
