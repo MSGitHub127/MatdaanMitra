@@ -39,7 +39,11 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
+        # This exports the current directory (backend/) to the PYTHONPATH
+        # so that pytest can correctly resolve the 'src' package.
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
         env:
           GCP_PROJECT_ID:              test-project
           GCP_LOCATION:                asia-south1
