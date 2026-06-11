@@ -23,7 +23,10 @@ from ...config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-security = HTTPBearer()
+# auto_error=False: HTTPBearer returns None (not 403) when the Authorization
+# header is absent. We raise 401 ourselves so the response matches the HTTP
+# spec (401 = unauthenticated, 403 = forbidden/authorised-but-not-permitted).
+security = HTTPBearer(auto_error=False)
 
 _firebase_initialised = False
 
@@ -62,12 +65,19 @@ def _ensure_firebase() -> bool:
 
 
 async def verify_firebase_token(
-    credentials: HTTPAuthorizationCredentials = Security(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(security),
 ) -> Optional[str]:
     """
     Verify a Firebase ID token and return the user's UID.
     Raises HTTPException on invalid / expired tokens.
     """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated. Please provide a Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if not _ensure_firebase():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

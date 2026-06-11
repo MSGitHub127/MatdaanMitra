@@ -64,9 +64,11 @@ Reply with JSON only — no markdown, no explanation:
 _KEYWORD_RULES: list[tuple[str, list[str]]] = [
     ("voter_lookup",      ["epic", "voter id", "voter card", "check status", "enrolled", "roll number"]),
     ("ero_location",      ["ero", "ero office", "blo", "booth officer", "polling office", "where is", "nearest office", "find office"]),
+    # deadline_query must come before form_guidance: "last date for registration"
+    # contains "registration" which would otherwise match form_guidance first.
+    ("deadline_query",    ["deadline", "last date", "cutoff", "by when", "how many days", "phase", "schedule"]),
     ("form_guidance",     ["form 6", "form 7", "form 8", "form 6a", "form 8a", "register", "registration", "enroll", "how to apply"]),
     ("document_check",    ["document", "aadhaar", "proof", "certificate", "photo", "id proof", "address proof", "what do i need"]),
-    ("deadline_query",    ["deadline", "last date", "when", "cutoff", "phase", "schedule", "by when", "how many days"]),
     ("grievance_help",    ["missing", "not found", "wrong", "error", "complaint", "grievance", "problem", "issue", "deleted"]),
     ("profile_collection",["my name", "i am from", "i live in", "my pincode", "my state", "my address"]),
 ]

@@ -86,7 +86,7 @@ class VoterSearchService:
     def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
-                timeout=httpx.Timeout(connect=5.0, read=10.0),
+                timeout=httpx.Timeout(10.0, connect=5.0),
                 headers={
                     "User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                     "Accept":       "application/json, text/plain, */*",
