@@ -74,7 +74,7 @@ jobs:
           cache-dependency-path: frontend/package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -244,7 +244,7 @@ jobs:
           cache-dependency-path: frontend/package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build Next.js (static assets only for Hosting CDN)
         run: npm run build
