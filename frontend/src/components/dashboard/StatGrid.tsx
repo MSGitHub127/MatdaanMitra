@@ -48,7 +48,7 @@ export default function StatGrid({ profile }: StatGridProps) {
       label: 'Days Left',
       value: daysLeft > 0 ? `${daysLeft}` : 'Deadline passed',
       sub: 'Phase 3 · Sep 30',
-      color: daysLeft > 30 ? '#10B981' : daysLeft > 7 ? '#FBBF24' : '#FB7185',
+      color: daysLeft > 30 ? 'var(--emerald)' : daysLeft > 7 ? 'var(--amber)' : 'var(--rose)',
       bgColor: daysLeft > 30 ? 'var(--emerald-dim)' : daysLeft > 7 ? 'var(--amber-dim)' : 'var(--rose-dim)',
     },
     {
@@ -56,7 +56,7 @@ export default function StatGrid({ profile }: StatGridProps) {
       label: 'Documents',
       value: total > 0 ? `${completion}%` : '—',
       sub: total > 0 ? `${done} of ${total} ready` : 'Start checklist',
-      color: completion >= 80 ? '#10B981' : completion >= 50 ? '#FBBF24' : '#F97316',
+      color: completion >= 80 ? 'var(--emerald)' : completion >= 50 ? 'var(--amber)' : 'var(--saffron)',
       bgColor: 'var(--emerald-dim)',
     },
     {
@@ -64,13 +64,13 @@ export default function StatGrid({ profile }: StatGridProps) {
       label: 'Pending',
       value: total > 0 ? `${pending}` : '—',
       sub: pending > 0 ? `${pending} document${pending !== 1 ? 's' : ''} missing` : 'All ready',
-      color: pending > 0 ? '#FB7185' : '#10B981',
+      color: pending > 0 ? 'var(--rose)' : 'var(--emerald)',
       bgColor: pending > 0 ? 'var(--rose-dim)' : 'var(--emerald-dim)',
     },
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div className="dashboard-stat-grid" style={{ gap: 10 }}>
       {stats.map(stat => (
         <div key={stat.label} style={{
           background: 'var(--card)',

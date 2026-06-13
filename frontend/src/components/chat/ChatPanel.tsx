@@ -78,7 +78,7 @@ export default function ChatPanel({
       }}>
         <div style={{
           width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg, #F97316, #7C2D12)',
+          background: 'linear-gradient(135deg, var(--saffron), var(--saffron-warm))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'Fraunces, serif', fontSize: 16, fontWeight: 700, color: '#fff',
           boxShadow: '0 0 16px var(--saffron-dim)', animation: 'glowRing 3s ease infinite',
@@ -159,7 +159,7 @@ export default function ChatPanel({
               }}
               onMouseEnter={e => {
                 if (!isLoading) {
-                  e.currentTarget.style.borderColor = 'rgba(249,115,22,0.55)';
+                  e.currentTarget.style.borderColor = 'var(--saffron-glow)';
                   e.currentTarget.style.color = 'var(--saffron-warm)';
                 }
               }}
@@ -194,7 +194,7 @@ export default function ChatPanel({
               outline: 'none', transition: 'border-color .15s',
               opacity: isLoading ? 0.6 : 1,
             }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(249,115,22,0.5)')}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--saffron)')}
             onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-fine)')}
           />
           <button
@@ -204,7 +204,7 @@ export default function ChatPanel({
               all: 'unset', cursor: text.trim() && !isLoading ? 'pointer' : 'not-allowed',
               width: 44, height: 44, borderRadius: 12, flexShrink: 0,
               background: text.trim() && !isLoading
-                ? 'linear-gradient(135deg, #F97316, #C2410C)'
+                ? 'linear-gradient(135deg, var(--saffron), var(--saffron-warm))'
                 : 'var(--card)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, color: text.trim() && !isLoading ? '#030508' : 'var(--ink-ghost)',

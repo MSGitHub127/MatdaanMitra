@@ -27,15 +27,15 @@ class TestHealthEndpoint:
         assert resp.status_code == 200
 
     def test_health_response_has_required_keys(self):
-        resp = client.get("/health")
+        resp = client.get("/health?deep=true")
         data = resp.json()
         assert "status" in data
         assert "environment" in data
         assert "checks" in data          # was 'services' in old test — fixed
 
     def test_health_status_is_string(self):
-        resp = client.get("/health")
-        assert resp.json()["status"] in ("healthy", "degraded")
+        resp = client.get("/health?deep=true")
+        assert resp.json()["status"] in ("ok", "degraded")
 
 
 class TestChatEndpoint:

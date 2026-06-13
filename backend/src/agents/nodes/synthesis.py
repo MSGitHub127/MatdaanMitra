@@ -161,6 +161,28 @@ def _template_response(
             avg_conf = sum(c.get("confidence", 0.8) for c in chunks[:2]) / len(chunks[:2])
             return "\n\n".join(text_parts), round(avg_conf, 3)
 
+    # ── Intent-specific fallbacks when no chunks are available ────────────────
+    if intent == "profile_collection":
+        return (
+            "To help you with voter registration, I need a few details:\n\n"
+            "- **Which state** are you currently residing in?\n"
+            "- **What is your 6-digit pincode?**\n"
+            "- Are you registering for the **first time**, or do you need to update "
+            "an existing registration (correction / change of address)?\n\n"
+            "You can also share your **EPIC number** if you already have one."
+        ), 0.80
+
+    if intent in ("unknown", "off_topic"):
+        return (
+            "I'm Matdaan Mitra — your voter registration assistant. I can help you with:\n\n"
+            "- **New voter registration** (Form 6)\n"
+            "- **Updating your details** — name, address, photo (Form 8 / 8A)\n"
+            "- **Finding your nearest ERO office**\n"
+            "- **Checking your EPIC / voter status**\n"
+            "- **Filing a grievance** if your name is missing or incorrect\n\n"
+            "What would you like help with today?"
+        ), 0.80
+
     return (
         "I don't have specific verified information for that query. "
         "Please check **eci.gov.in** or call the National Voter Helpline at **1950** "

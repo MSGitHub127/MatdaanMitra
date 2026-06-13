@@ -85,10 +85,10 @@ function deriveMilestones(profile: VoterProfile): Milestone[] {
 }
 
 const STATUS_STYLES: Record<MilestoneStatus, { dot: string; line: string; label: string }> = {
-  completed: { dot: '#10B981', line: 'rgba(16,185,129,0.4)', label: 'var(--emerald)' },
-  current: { dot: '#F97316', line: 'rgba(249,115,22,0.25)', label: 'var(--saffron)' },
-  pending: { dot: '#3A5470', line: 'rgba(58,84,112,0.3)', label: 'var(--ink-ghost)' },
-  blocked: { dot: '#1E3550', line: 'rgba(30,53,80,0.3)', label: 'var(--ink-ghost)' },
+  completed: { dot: 'var(--emerald)', line: 'var(--emerald-dim)', label: 'var(--emerald)' },
+  current: { dot: 'var(--saffron)', line: 'var(--saffron-glow)', label: 'var(--saffron)' },
+  pending: { dot: 'var(--ink-faint)', line: 'var(--border)', label: 'var(--ink-ghost)' },
+  blocked: { dot: 'var(--border-fine)', line: 'var(--border)', label: 'var(--ink-ghost)' },
 };
 
 export default function RegistrationTimeline({ profile }: RegistrationTimelineProps) {

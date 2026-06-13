@@ -12,13 +12,6 @@ interface VoterSidebarProps {
   onNavigate: (tab: number) => void;
 }
 
-const STATES = [
-  ['MH', 'Maharashtra'], ['BR', 'Bihar'], ['DL', 'Delhi'],
-  ['KA', 'Karnataka'], ['TN', 'Tamil Nadu'], ['GJ', 'Gujarat'],
-  ['WB', 'West Bengal'], ['UP', 'Uttar Pradesh'], ['RJ', 'Rajasthan'],
-  ['AP', 'Andhra Pradesh'],
-];
-
 type SideTab = 'profile' | 'lookup' | 'phases';
 
 /* ── Dot ── */
@@ -37,7 +30,6 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
 
   // Voter lookup state
   const [epic, setEpic] = useState('');
-  const [state, setState] = useState('MH');
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState<any>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -69,7 +61,7 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
     } finally {
       setLookupLoading(false);
     }
-  }, [epic, state]);
+  }, [epic]);
 
   const QUICK_NAV = [
     { icon: '📋', label: 'Form 6 — New Registration', sub: 'Download · ERO submission', tab: 2 },
@@ -113,7 +105,7 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
             <div style={{ display: 'flex', gap: 11, alignItems: 'center', marginBottom: 14 }}>
               <div style={{
                 width: 46, height: 46, borderRadius: '50%', flexShrink: 0, position: 'relative',
-                background: 'linear-gradient(135deg, #F97316, #7C2D12)',
+                background: 'linear-gradient(135deg, var(--saffron), var(--saffron-warm))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: 'Fraunces, serif', fontSize: 18, fontWeight: 700, color: '#fff',
                 animation: 'glowRing 3s ease infinite',
@@ -261,26 +253,6 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
             }}
           />
 
-          <label style={{ fontSize: 10, color: 'var(--ink-ghost)', letterSpacing: '.08em', display: 'block', marginBottom: 5 }}>
-            STATE
-          </label>
-          <select
-            value={state}
-            onChange={e => setState(e.target.value)}
-            style={{
-              width: '100%', background: 'var(--card)',
-              border: '1px solid var(--border-fine)',
-              borderRadius: 9, padding: '9px 11px',
-              color: 'var(--ink-dim)', fontSize: 12,
-              fontFamily: 'Instrument Sans, sans-serif',
-              outline: 'none', cursor: 'pointer', marginBottom: 14,
-            }}
-          >
-            {STATES.map(([code, name]) => (
-              <option key={code} value={code}>{name}</option>
-            ))}
-          </select>
-
           <button
             onClick={handleLookup}
             disabled={!epic.trim() || lookupLoading}
@@ -288,7 +260,7 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
               all: 'unset', cursor: epic.trim() ? 'pointer' : 'not-allowed',
               width: '100%',
               background: epic.trim()
-                ? 'linear-gradient(135deg, var(--saffron), #C2410C)'
+                ? 'linear-gradient(135deg, var(--saffron), var(--saffron-warm))'
                 : 'var(--card)',
               color: epic.trim() ? '#030508' : 'var(--ink-ghost)',
               borderRadius: 10, padding: '11px',
@@ -319,10 +291,10 @@ export default function VoterSidebar({ profile, sessionId, language, onNavigate 
                   ? 'var(--emerald-dim)'
                   : 'var(--rose-dim)',
               border: `1px solid ${lookupResult.nvsp_redirect
-                  ? 'rgba(251,191,36,0.4)'
-                  : lookupResult.found
-                    ? 'rgba(16,185,129,0.4)'
-                    : 'rgba(251,113,133,0.4)'
+                ? 'rgba(251,191,36,0.4)'
+                : lookupResult.found
+                  ? 'rgba(16,185,129,0.4)'
+                  : 'rgba(251,113,133,0.4)'
                 }`,
               borderRadius: 11, padding: '12px 13px',
             }}>

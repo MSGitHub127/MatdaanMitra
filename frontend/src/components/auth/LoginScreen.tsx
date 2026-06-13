@@ -54,10 +54,9 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
             fontFamily: 'Instrument Sans, system-ui, sans-serif',
         }}>
 
-            {/* Background radial glow */}
             <div style={{
                 position: 'fixed', inset: 0, pointerEvents: 'none',
-                background: 'radial-gradient(ellipse at 50% 30%, rgba(249,115,22,0.06) 0%, transparent 65%)',
+                background: 'radial-gradient(ellipse at 50% 30%, var(--saffron-trace) 0%, transparent 65%)',
             }} />
 
             <div style={{
@@ -86,7 +85,7 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                                 width: 64, height: 64, borderRadius: '50%',
                                 background: 'conic-gradient(#FF9933 0deg 120deg, #F0EDE6 120deg 240deg, #138808 240deg 360deg)',
                                 margin: '0 auto 14px',
-                                boxShadow: '0 0 0 2px rgba(249,115,22,0.4), 0 0 28px rgba(249,115,22,0.18)',
+                                boxShadow: '0 0 0 2px var(--saffron), 0 0 28px var(--saffron-glow)',
                                 position: 'relative',
                             }}>
                                 <div style={{
@@ -197,7 +196,7 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                                 transition: 'all .15s', marginTop: 6,
                                 opacity: (googleLoading || anonLoading) ? 0.6 : 1,
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)')}
+                            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--saffron)')}
                             onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                         >
                             {anonLoading ? '⏳' : '👤'}

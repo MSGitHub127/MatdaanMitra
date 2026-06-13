@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useState, useCallback } from 'react';
 import type { VoterProfile } from '../../types/voter';
+import { generateGrievanceLetter } from '../../lib/api';
 import StatGrid from './StatGrid';
 import RegistrationTimeline from './RegistrationTimeline';
 import DocumentChecklist from './DocumentChecklist';
@@ -60,24 +61,7 @@ export default function VoterDashboard({
     setPdfError(null);
 
     try {
-      const { getAuth } = await import('firebase/auth');
-      const user = getAuth().currentUser;
-      if (!user) throw new Error('Not authenticated');
-      const token = await user.getIdToken();
-
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
-      const res = await fetch(`${BACKEND_URL}/grievance/letter`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ session_id: sessionId, issue_type: issueType }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail ?? `Request failed (${res.status})`);
-      }
-
-      const blob = await res.blob();
+      const blob = await generateGrievanceLetter(sessionId, issueType);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -125,10 +109,12 @@ export default function VoterDashboard({
       </div>
 
       {/* ── Tab bar ── */}
-      <div style={{
+      <div className="dashboard-tab-bar" style={{
         borderBottom: '1px solid var(--border)',
         flexShrink: 0, padding: '0 20px',
         display: 'flex', gap: 2, marginTop: 14,
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
       }}>
         {TABS.map((label, i) => (
           <button key={label} onClick={() => setTab(i)} style={{
@@ -373,7 +359,7 @@ export default function VoterDashboard({
       </div>
 
       {/* Footer status bar */}
-      <footer style={{
+      <footer className="dashboard-footer" style={{
         height: 28, flexShrink: 0,
         background: 'var(--surface)',
         borderTop: '1px solid var(--border)',

@@ -72,7 +72,7 @@ export default function Header({ profile, language, onLanguageChange }: HeaderPr
     : 'VOTER';
 
   return (
-    <header style={{
+    <header className="global-header" style={{
       height: 58, flexShrink: 0, position: 'relative', zIndex: 20,
       background: 'var(--surface)',
       borderBottom: '1px solid var(--border)',
@@ -90,17 +90,17 @@ export default function Header({ profile, language, onLanguageChange }: HeaderPr
           >
             मतदान मित्र
           </div>
-          <div style={{ fontSize: 8.5, color: 'var(--ink-ghost)', letterSpacing: '.18em', marginTop: 2 }}>
+          <div className="header-logo-subtitle" style={{ fontSize: 8.5, color: 'var(--ink-ghost)', letterSpacing: '.18em', marginTop: 2 }}>
             MATDAAN MITRA · ECI VERIFIED
           </div>
         </div>
       </div>
 
       {/* ── Status ribbon (centre) ── */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+      <div className="header-status-ribbon" style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
         <div style={{
           background: 'var(--saffron-trace)',
-          border: '1px solid rgba(249,115,22,0.22)',
+          border: '1px solid var(--saffron-glow)',
           borderRadius: 20, padding: '5px 18px',
           display: 'flex', alignItems: 'center', gap: 10,
           fontSize: 11.5, color: 'var(--saffron-warm)',
@@ -168,7 +168,7 @@ export default function Header({ profile, language, onLanguageChange }: HeaderPr
         </div>
 
         {/* Voter identity pill */}
-        <div style={{
+        <div className="header-voter-pill" style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',
           borderRadius: 20, padding: '5px 13px',
@@ -176,24 +176,24 @@ export default function Header({ profile, language, onLanguageChange }: HeaderPr
         }}>
           <div style={{
             width: 24, height: 24, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #F97316, #B45309)',
+            background: 'linear-gradient(135deg, var(--saffron), var(--saffron-warm))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0,
-            boxShadow: '0 0 10px rgba(249,115,22,0.3)',
+            boxShadow: '0 0 10px var(--saffron-glow)',
           }}>
             {initials}
           </div>
-          <span style={{ color: 'var(--ink-dim)' }}>
+          <span className="header-voter-name" style={{ color: 'var(--ink-dim)' }}>
             {profile.name?.split(' ')[0] ?? 'Voter'}
           </span>
-          <span style={{ color: 'var(--ink-ghost)' }}>·</span>
-          <span style={{ color: 'var(--saffron)', fontSize: 10, fontWeight: 600, letterSpacing: '.04em' }}>
+          <span className="header-voter-divider" style={{ color: 'var(--ink-ghost)' }}>·</span>
+          <span className="header-voter-type" style={{ color: 'var(--saffron)', fontSize: 10, fontWeight: 600, letterSpacing: '.04em' }}>
             {regTypeLabel}
           </span>
         </div>
-
+ 
         {/* ECI verified badge */}
-        <div style={{
+        <div className="header-eci-badge" style={{
           background: 'var(--emerald-dim)',
           border: '1px solid rgba(16,185,129,0.33)',
           borderRadius: 8, padding: '5px 11px',

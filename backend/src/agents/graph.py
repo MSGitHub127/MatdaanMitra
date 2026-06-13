@@ -47,7 +47,7 @@ def route_after_profile_builder(
     """
     intent = state.get("intent")
 
-    if intent in ("form_guidance", "deadline_query", "document_check"):
+    if intent in ("form_guidance", "deadline_query", "document_check", "grievance_help"):
         return "retrieve"
 
     if intent in ("voter_lookup", "ero_location"):

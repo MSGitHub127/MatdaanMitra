@@ -4,34 +4,42 @@
 
 /* ── Design tokens ──────────────────────────────────────────── */
 :root {
-  --bg: #030508;
-  --surface: #091120;
-  --card: #0D1829;
-  --border: #18304A;
-  --border-fine: #1C3854;
-  --saffron: #F97316;
-  --saffron-warm: #FB923C;
-  --saffron-dim: rgba(249, 115, 22, 0.10);
-  --saffron-glow: rgba(249, 115, 22, 0.18);
-  --saffron-trace: rgba(249, 115, 22, 0.06);
-  --emerald: #10B981;
-  --emerald-dim: rgba(16, 185, 129, 0.10);
-  --sapphire: #38BDF8;
-  --sapphire-dim: rgba(56, 189, 248, 0.10);
-  --amber: #FBBF24;
-  --amber-dim: rgba(251, 191, 36, 0.10);
-  --rose: #FB7185;
-  --rose-dim: rgba(251, 113, 133, 0.10);
-  --violet: #A78BFA;
-  --violet-dim: rgba(167, 139, 250, 0.10);
-  --ink: #EDF2F7;
-  --ink-dim: #7D9AB5;
-  --ink-faint: #3A5470;
-  --ink-ghost: #1E3550;
+  --bg: #FAF6EE; /* Premium warm linen/sand background */
+  --surface: #F1ECE0; /* Soft warm oatmeal surface */
+  --card: #FFFFFF; /* Pure white crisp card background */
+  --border: #E5DEC9; /* Warm clay/sandstone border */
+  --border-fine: #D6CCA8; /* Slightly darker clay accent border */
+  
+  --saffron: #965C38; /* Warm cinnamon/caramel brown */
+  --saffron-warm: #B47F5D; /* Soft light caramel */
+  --saffron-dim: rgba(150, 92, 56, 0.10); /* Cinnamon dim shadow */
+  --saffron-glow: rgba(150, 92, 56, 0.18); /* Cinnamon glow outline */
+  --saffron-trace: rgba(150, 92, 56, 0.06); /* Cinnamon background trace */
+
+  --emerald: #1F6946; /* Deep forest green */
+  --emerald-dim: rgba(31, 105, 70, 0.10);
+
+  --sapphire: #2B6796; /* Elegant ocean blue */
+  --sapphire-dim: rgba(43, 103, 150, 0.10);
+
+  --amber: #B27B13; /* Warm golden ochre */
+  --amber-dim: rgba(178, 123, 19, 0.10);
+
+  --rose: #A64753; /* Soft clay red */
+  --rose-dim: rgba(166, 71, 83, 0.10);
+
+  --violet: #66509E; /* Rich mulberry purple */
+  --violet-dim: rgba(102, 80, 158, 0.10);
+
+  --ink: #302620; /* Deep espresso text */
+  --ink-dim: #5E5046; /* Warm roasted coffee text */
+  --ink-faint: #8E7C70; /* Roasted hazelnut text */
+  --ink-ghost: #B2A296; /* Soft warm sand text */
+
   /* Tricolor */
-  --tri-saffron: #FF9933;
-  --tri-white: #F0EDE6;
-  --tri-green: #138808;
+  --tri-saffron: #D97706;
+  --tri-white: #FAF9F6;
+  --tri-green: #1F6946;
 }
 
 /* ── Reset ──────────────────────────────────────────────────── */
@@ -101,7 +109,7 @@ body {
   width: 800px;
   height: 800px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(249, 115, 22, 0.04) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(150, 92, 56, 0.05) 0%, transparent 65%);
 }
 
 .atmo-bg::after {
@@ -112,7 +120,7 @@ body {
   width: 700px;
   height: 700px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.03) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(43, 103, 150, 0.03) 0%, transparent 60%);
 }
 
 /* ── Keyframes ───────────────────────────────────────────────── */
@@ -179,14 +187,13 @@ body {
 }
 
 @keyframes glowRing {
-
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.3);
+    box-shadow: 0 0 0 0 rgba(150, 92, 56, 0.35);
   }
 
   50% {
-    box-shadow: 0 0 0 6px rgba(249, 115, 22, 0);
+    box-shadow: 0 0 0 6px rgba(150, 92, 56, 0);
   }
 }
 
@@ -256,8 +263,8 @@ body {
 /* ── Glass morphism ──────────────────────────────────────────── */
 .glass {
   background: linear-gradient(135deg,
-      rgba(17, 32, 52, 0.85) 0%,
-      rgba(9, 17, 32, 0.6) 100%);
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(249, 246, 240, 0.65) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -300,5 +307,73 @@ body {
 
   .grain-overlay {
     display: none;
+  }
+}
+
+/* ── Responsive Additions ────────────────────────────────────── */
+
+/* Dashboard Stat Grid - handles multi-column responsive layout */
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .dashboard-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tab Bar - hides scrollbar for smooth swipe actions */
+.dashboard-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Footer - compacts footer items on small devices */
+@media (max-width: 680px) {
+  .dashboard-footer span:not(:first-child),
+  .dashboard-footer div {
+    display: none !important;
+  }
+}
+
+/* Header - controls layout shifting on small devices */
+@media (max-width: 1024px) {
+  .header-status-ribbon {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-eci-badge {
+    display: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-voter-name,
+  .header-voter-divider,
+  .header-voter-type {
+    display: none !important;
+  }
+  .header-voter-pill {
+    padding: 5px !important;
+    border-radius: 50% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  header.global-header {
+    padding: 0 10px !important;
+    gap: 8px !important;
+  }
+  .header-logo-subtitle {
+    display: none !important;
   }
 }

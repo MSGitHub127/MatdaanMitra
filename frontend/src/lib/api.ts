@@ -157,3 +157,23 @@ export async function synthesizeSpeech(
     return null;
   }
 }
+
+// ─── Grievance Letter ──────────────────────────────────────────────────────────
+
+/**
+ * Generates a pre-filled grievance complaint letter PDF.
+ * Returns the PDF as a Blob.
+ */
+export async function generateGrievanceLetter(
+  sessionId: string,
+  issueType: string,
+): Promise<Blob> {
+  const headers = await authHeaders();
+  const res = await fetch(`${BACKEND_URL}/grievance/letter`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ session_id: sessionId, issue_type: issueType }),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.blob();
+}

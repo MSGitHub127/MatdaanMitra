@@ -110,7 +110,7 @@ export default function MessageBubble({ message, language }: MessageBubbleProps)
       {isBot ? (
         <div style={{
           width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg, #F97316, #7C2D12)',
+          background: 'linear-gradient(135deg, var(--saffron), var(--saffron-warm))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'Fraunces, serif', fontSize: 11, fontWeight: 700, color: '#fff',
           boxShadow: '0 0 10px var(--saffron-dim)',
@@ -118,7 +118,7 @@ export default function MessageBubble({ message, language }: MessageBubbleProps)
       ) : (
         <div style={{
           width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg, #38BDF8, #0369A1)',
+          background: 'linear-gradient(135deg, var(--sapphire), var(--ink-ghost))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 10, fontWeight: 700, color: '#fff',
         }}>U</div>

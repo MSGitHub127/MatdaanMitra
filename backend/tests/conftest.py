@@ -46,6 +46,24 @@ def no_redis():
         yield
 
 
+# ── GCP/Vertex AI bypass ───────────────────────────────────────────────────────
+
+@pytest.fixture(autouse=True)
+def no_gcp():
+    """
+    Disable GCP/Vertex AI integrations during tests by clearing project ID.
+    This forces nodes to use their local/static fallback paths.
+    """
+    from src.config.settings import settings
+    orig_project = settings.gcp_project_id
+    orig_endpoint = settings.vertex_ai_index_endpoint_id
+    settings.gcp_project_id = ""
+    settings.vertex_ai_index_endpoint_id = ""
+    yield
+    settings.gcp_project_id = orig_project
+    settings.vertex_ai_index_endpoint_id = orig_endpoint
+
+
 # ── FastAPI test client ────────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -59,7 +77,7 @@ def client():
 @pytest.fixture
 def mock_agent_graph():
     """
-    Patches agent_graph.ainvoke to return a fixed successful state.
+    Patches agent_graph.ainvoke and astream_events to return a fixed successful state.
     Prevents any Vertex AI / Gemini calls during integration tests.
     """
     fixed_state = {
@@ -72,8 +90,31 @@ def mock_agent_graph():
         "error": None,
     }
 
+    class MockChunk:
+        def __init__(self, content):
+            self.content = content
+
+    async def mock_astream_events(*args, **kwargs):
+        # Yield a chat model stream token event
+        yield {
+            "event": "on_chat_model_stream",
+            "name": "Gemini",
+            "data": {
+                "chunk": MockChunk("You need to submit Form 6 to register as a new voter.")
+            }
+        }
+        # Yield the chain end event
+        yield {
+            "event": "on_chain_end",
+            "name": "LangGraph",
+            "data": {
+                "output": fixed_state
+            }
+        }
+
     with patch("src.api.routes.chat.agent_graph") as mock_graph:
         mock_graph.ainvoke = AsyncMock(return_value=fixed_state)
+        mock_graph.astream_events = mock_astream_events
         yield mock_graph
 
 
