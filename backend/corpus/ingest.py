@@ -530,7 +530,13 @@ if __name__ == "__main__":
     ingestor.save_to_jsonl(chunks, str(jsonl_path))
 
     # Save metadata to Firestore
-    saved = ingestor.save_to_firestore(chunks)
-
-    logger.info("Ingestion complete. %d chunks ready for embedding.", saved)
+    try:
+        saved = ingestor.save_to_firestore(chunks)
+        logger.info("Ingestion complete. %d chunks ready for embedding.", saved)
+    except Exception as exc:
+        logger.warning(
+            "Could not save to Firestore (API may be disabled or unconfigured): %s. "
+            "Ingestion completed locally. %d chunks saved to %s.",
+            exc, len(chunks), jsonl_path
+        )
     logger.info("Next step: run  python -m corpus.embed")

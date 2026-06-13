@@ -56,8 +56,6 @@ function AppShell() {
   const { messages, sendMessage, isLoading } = useChat(sessionId, language);
   const { profile, updateChecklist } = useVoterProfile(sessionId);
 
-  // When sidebar quick-nav fires, switch both the dashboard tab
-  // AND the mobile view to the dashboard panel
   const handleNavigate = (tab: number) => {
     setDashTab(tab);
     setMobileTab('dashboard');
@@ -68,16 +66,13 @@ function AppShell() {
       display: 'flex', flexDirection: 'column',
       height: '100vh', overflow: 'hidden',
     }}>
-      {/* Global header with language selector + voter pill */}
       <Header
         profile={profile}
         language={language}
         onLanguageChange={setLanguage}
       />
 
-      {/* ── Three-column desktop layout ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
-
         <div className="panel-sidebar">
           <VoterSidebar
             profile={profile}
@@ -110,7 +105,6 @@ function AppShell() {
         </div>
       </div>
 
-      {/* ── Mobile tab bar (hidden on desktop via CSS) ── */}
       <nav className="mobile-tab-bar">
         {MOBILE_TABS.map(tab => (
           <button
@@ -134,27 +128,22 @@ function AppShell() {
         ))}
       </nav>
 
-      {/* ── Responsive CSS ── */}
       <style>{`
-        /* ── Desktop (≥ 1025px): full 3-column layout ── */
         .panel-sidebar   { width: 248px; flex-shrink: 0; display: flex; flex-direction: column; }
         .panel-chat      { width: 420px; flex-shrink: 0; display: flex; flex-direction: column; }
         .panel-dashboard { min-width: 0; }
         .mobile-tab-bar  { display: none; }
 
-        /* ── Tablet (768–1024px): hide sidebar ── */
         @media (max-width: 1024px) {
           .panel-sidebar { display: none !important; }
           .panel-chat    { width: 360px; }
         }
 
-        /* ── Mobile (≤ 700px): single panel + bottom tab bar ── */
         @media (max-width: 700px) {
           .panel-sidebar,
           .panel-chat,
           .panel-dashboard { display: none !important; }
 
-          /* Show only the currently selected mobile panel */
           .panel-${mobileTab} {
             display: flex !important;
             flex: 1;
@@ -176,22 +165,71 @@ function AppShell() {
 
 // ── Root page component ───────────────────────────────────────────────────────
 
+/**
+ * Auth state machine:
+ *
+ *   'loading'         → showing spinner; ensureAuth() is in-flight
+ *   'authenticated'   → Firebase has a valid user + ID token; AppShell renders
+ *   'unauthenticated' → ensureAuth() rejected (misconfigured Firebase / no network)
+ *
+ * FIX — Race condition between onAuthChange and ensureAuth():
+ *
+ *   BEFORE:
+ *     onAuthChange fires as soon as Firebase restores a cached session
+ *     (synchronously, before ensureAuth resolves). This set authState →
+ *     'authenticated' while the anonymous sign-in for NEW sessions was still
+ *     in-flight. AppShell rendered, useChat initialised, the user sent a
+ *     message, and authHeaders() found currentUser=null → 401.
+ *
+ *   AFTER:
+ *     We use a single source of truth: ensureAuth() resolves only after
+ *     Firebase has a fully-minted user with a valid token.
+ *
+ *     onAuthChange is still used — but ONLY to detect sign-out events
+ *     (user=null after previously being authenticated), which drops the app
+ *     back to the login screen. It no longer drives the initial 'authenticated'
+ *     transition.
+ *
+ *     The 'authenticated' state is set ONLY inside the ensureAuth().then(...)
+ *     callback, guaranteeing getAuth().currentUser is non-null and
+ *     getIdToken() will succeed before the first message is sent.
+ */
 type AuthState = 'loading' | 'unauthenticated' | 'authenticated';
 
 export default function Home() {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
-    // Subscribe to Firebase auth state changes
-    const unsubscribe = onAuthChange((user) => {
-      setAuthState(user ? 'authenticated' : 'unauthenticated');
-    });
+    let resolved = false;
 
-    // Attempt silent anonymous sign-in on first load.
-    // If Firebase is misconfigured this throws, which the ErrorBoundary catches.
+    // ── Step 1: Attempt silent sign-in (anonymous if no session exists) ──────
+    // This is the authoritative path to 'authenticated'. AppShell does NOT
+    // render until this resolves, so getAuth().currentUser is always non-null
+    // by the time the first API call fires.
     ensureAuth()
-      .then(() => setAuthState('authenticated'))
-      .catch(() => setAuthState('unauthenticated'));
+      .then(() => {
+        resolved = true;
+        setAuthState('authenticated');
+      })
+      .catch(() => {
+        resolved = true;
+        setAuthState('unauthenticated');
+      });
+
+    // ── Step 2: Watch for sign-out after the session is established ───────────
+    // onAuthChange(user=null) means the user signed out (or their session was
+    // revoked). In that case we drop back to 'unauthenticated' regardless of
+    // the ensureAuth result.
+    //
+    // We ignore the initial onAuthChange(user) event — ensureAuth handles that.
+    // The `resolved` flag prevents a cached-session onAuthChange from racing
+    // ahead of ensureAuth during the startup window.
+    const unsubscribe = onAuthChange((user) => {
+      if (!user && resolved) {
+        // Genuine sign-out after a valid session
+        setAuthState('unauthenticated');
+      }
+    });
 
     return unsubscribe;
   }, []);
@@ -203,7 +241,6 @@ export default function Home() {
         <LoginScreen onAuthenticated={(_uid, _isAnonymous) => setAuthState('authenticated')} />
       )}
       {authState === 'authenticated' && (
-        // Second ErrorBoundary so an AppShell crash doesn't hide the outer UI
         <ErrorBoundary>
           <AppShell />
         </ErrorBoundary>

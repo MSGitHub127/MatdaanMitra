@@ -38,12 +38,20 @@ export default function ChatPanel({
   const feedRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages, but only if they were already near the bottom
   useEffect(() => {
-    if (feedRef.current) {
-      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    const feed = feedRef.current;
+    if (!feed) return;
+
+    const isAtBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 120;
+    const lastMessage = messages[messages.length - 1];
+    const isUserMsg = lastMessage?.role === 'user';
+
+    if (isUserMsg || isAtBottom) {
+      feed.scrollTop = feed.scrollHeight;
     }
   }, [messages, isLoading]);
+
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -63,10 +71,11 @@ export default function ChatPanel({
 
   return (
     <section style={{
-      width: 420, flexShrink: 0,
+      width: '100%', flex: 1,
       display: 'flex', flexDirection: 'column',
       borderRight: '1px solid var(--border)',
       background: 'var(--bg)', overflow: 'hidden',
+      height: '100%',
     }}>
 
       {/* ── Chat header ── */}

@@ -41,7 +41,7 @@ async def synthesize_speech(
     uid: str = Depends(verify_firebase_token),
 ):
     """
-    Convert text to speech using Sarvam AI (bulbul:v1 model).
+    Convert text to speech using Sarvam AI (bulbul:v2 model).
 
     Returns a base64-encoded WAV string which the frontend decodes
     and plays directly via:

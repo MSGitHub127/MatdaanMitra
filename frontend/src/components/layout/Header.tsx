@@ -109,8 +109,6 @@ export default function Header({ profile, language, onLanguageChange }: HeaderPr
           <span>RAG Pipeline Active</span>
           <span style={{ color: 'var(--ink-ghost)' }}>·</span>
           <span>ECI Corpus · Synced Apr 2026</span>
-          <span style={{ color: 'var(--ink-ghost)' }}>·</span>
-          <span style={{ color: 'var(--saffron)', fontWeight: 600 }}>Gemini 1.5 Pro</span>
         </div>
       </div>
 

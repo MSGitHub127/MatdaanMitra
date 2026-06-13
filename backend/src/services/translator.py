@@ -43,17 +43,17 @@ LANG_MAP: dict[str, str] = {
 
 # A natural-sounding female speaker per language
 TTS_SPEAKERS: dict[str, str] = {
-    "hi-IN": "meera",
-    "mr-IN": "meera",
+    "hi-IN": "anushka",
+    "mr-IN": "anushka",
     "ta-IN": "pavithra",
     "te-IN": "pavithra",
-    "bn-IN": "meera",
-    "kn-IN": "meera",
-    "gu-IN": "meera",
-    "ml-IN": "meera",
-    "pa-IN": "meera",
-    "od-IN": "meera",
-    "en-IN": "meera",
+    "bn-IN": "anushka",
+    "kn-IN": "anushka",
+    "gu-IN": "anushka",
+    "ml-IN": "anushka",
+    "pa-IN": "anushka",
+    "od-IN": "anushka",
+    "en-IN": "anushka",
 }
 
 # Shared async client — pooled, reused across requests
@@ -180,7 +180,7 @@ class TranslatorService:
             return None
 
         lang_code = _sarvam_code(language)
-        speaker   = TTS_SPEAKERS.get(lang_code, "meera")
+        speaker   = TTS_SPEAKERS.get(lang_code, "anushka")
 
         # Sarvam TTS works best with chunks ≤ 500 chars
         chunk = text[:500]
@@ -198,7 +198,7 @@ class TranslatorService:
                     "loudness": 1.5,
                     "speech_sample_rate": 22050,
                     "enable_preprocessing": True,
-                    "model": "bulbul:v1",
+                    "model": "bulbul:v2",
                 },
             )
             resp.raise_for_status()

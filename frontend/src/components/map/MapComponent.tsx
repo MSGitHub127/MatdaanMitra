@@ -22,7 +22,7 @@ import type { EROOffice } from '../../types/voter';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '';
+const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
 
 /** Geographical centre of India */
 const INDIA_CENTER: [number, number] = [78.9629, 20.5937];

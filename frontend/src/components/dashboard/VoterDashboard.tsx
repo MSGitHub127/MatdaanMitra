@@ -373,8 +373,6 @@ export default function VoterDashboard({
         </span>
         <span>·</span>
         <span>ECI corpus · Synced Apr 2026</span>
-        <span>·</span>
-        <span>Gemini 1.5 Pro · text-embedding-004</span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span>Not affiliated with any political party</span>
           <span>·</span>

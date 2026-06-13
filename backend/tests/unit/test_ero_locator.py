@@ -48,6 +48,12 @@ def _mock_client(geo_resp, search_resp) -> MagicMock:
 
 class TestEROLocatorService:
 
+    @pytest.fixture(autouse=True)
+    def mock_pincode_fallback(self):
+        """Mock India Post pincode service to return None by default during unit tests."""
+        with patch("src.services.pincode.PincodeService.get_pincode_info", new_callable=AsyncMock, return_value=None):
+            yield
+
     async def test_finds_ero_office_successfully(self):
         mock_client = _mock_client(
             _make_geocode_response(),

@@ -178,10 +178,13 @@ _INTENT_CHUNK_MAP: dict[str, list[str]] = {
 
 def _fallback_chunks(intent: str | None, query: str, top_k: int = 3) -> list[RetrievedChunk]:
     """Return the most relevant static ECI chunks for the given intent."""
-    chunk_ids = _INTENT_CHUNK_MAP.get(intent or "", ["form6_eligibility", "form6_documents"])
+    chunk_ids = _INTENT_CHUNK_MAP.get(intent or "")
+    if not chunk_ids:
+        return []
     chunks_by_id = {c["chunk_id"]: c for c in _ECI_FALLBACK}
     selected = [chunks_by_id[cid] for cid in chunk_ids if cid in chunks_by_id]
     return selected[:top_k]
+
 
 
 # ── Firestore metadata fetch (batched) ────────────────────────────────────────

@@ -32,6 +32,7 @@ const nextConfig = {
       // API calls, Mapbox tiles, Firebase, Sarvam AI
       [
         "connect-src 'self'",
+        'http://localhost:8000',
         'https://*.googleapis.com',
         'https://*.mapbox.com',
         'https://events.mapbox.com',
